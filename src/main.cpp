@@ -14,8 +14,11 @@
 #else
     #include <GLUT/glut.h>
 #endif /*__APPLE__*/
+
+
 // project stuff
 #include "st.hpp"
+#include "Shader.hpp"
 
 //void st_disp_func(void)
 //{
@@ -42,7 +45,17 @@ int main(int argc, char* argv[])
     std::string test_vert_shader = "shader/test.vert";
     std::string test_frag_shader = "shader/test.frag";
 
-    Shader test_shader(test_vert_shader, test_frag_shader);
+    Shader test_shader;
+    
+    test_shader.load(test_vert_shader, test_frag_shader);
+    if(!test_shader.ok())
+    {
+        std::cerr << "[" << __func__ << "] failed to load shader files [" 
+            << test_vert_shader << "] and [" << test_frag_shader 
+            << "]" << std::endl;
+
+        return -1;
+    }
 
     return 0;
 }

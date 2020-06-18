@@ -22,25 +22,6 @@ struct Texture
 };
 
 
-/*
- * Shader
- */
-struct Shader
-{
-    GLint program;
-    GLint shader[2];
-
-    public:
-        Shader(const std::string& vert_fname, const std::string& frag_fname);
-        ~Shader();
-
-        Shader(const Shader& that) = delete;
-        Shader& operator=(const Shader& that) = delete;
-        
-        bool Ok(void) const;
-        void Use(void);
-        // TODO : methods to set uniform ? 
-};
 
 
 // Display function

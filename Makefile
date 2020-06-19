@@ -8,7 +8,7 @@ OBJ_DIR=obj
 SRC_DIR=src
 TEST_DIR=test
 TEST_BIN_DIR=$(BIN_DIR)
-PROGRAM_DIR=tools
+PROGRAM_DIR=program
 
 # Platform specific GL libs 
 ifeq ($(shell uname -s), Darwin)
@@ -20,7 +20,7 @@ endif
 # Tool options
 CXX=g++
 OPT=-O0
-CXXFLAGS=-Wall -pedantic -g2 -std=c++17 -D_REENTRANT $(OPT) 
+CXXFLAGS=-Wall -pedantic -g2 -std=c++17 -D_REENTRANT $(OPT) -I$(SRC_DIR)
 TESTFLAGS=
 LDFLAGS=-pthread
 LIBS = $(GLLIBS)
@@ -28,7 +28,7 @@ TEST_LIBS=
 INCS=-I$(SRC_DIR)
 
 
-.PHONY: clean
+.PHONY: clean all test program
 
 SOURCES = $(wildcard $(SRC_DIR)/*.cpp)
 INCLUDES = $(wildcard $(SRC_DIR)/*.hpp)
@@ -54,13 +54,28 @@ $(TESTS): $(TEST_OBJECTS) $(OBJECTS)
 	$(CXX) $(LDFLAGS) $(OBJECTS) $(OBJ_DIR)/$@.o\
 		-o $(TEST_BIN_DIR)/$@ $(LIBS) $(TEST_LIBS)
 
+
+# ==== PROGRAM TARGETS ==== #
+PROGRAMS=main
+PROGRAM_SOURCES = $(wildcard $(PROGRAM_DIR)/*.cpp)
+PROGRAM_OBJECTS = $(PROGRAM_SOURCES:$(PROGRAM_DIR)/%.cpp=$(OBJ_DIR)/%.o)
+
+$(PROGRAM_OBJECTS) : $(OBJ_DIR)/%.o : $(PROGRAM_DIR)/%.cpp
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
+$(PROGRAMS): $(OBJECTS) $(PROGRAM_OBJECTS) 
+	$(CXX) $(LDFLAGS) $(OBJECTS) $(OBJ_DIR)/$@.o\
+		-o $(BIN_DIR)/$@ $(LIBS) $(TEST_LIBS)
+
 # Main targets 
 all : program test
 
 test: $(TESTS)
 
-program: $(OBJECTS) 
-	$(CXX) $(LDFLAGS) $(OBJECTS)  -o $(BIN_DIR)/$@ $(LIBS) $(TEST_LIBS)
+program: $(PROGRAMS)
+
+#program: $(OBJECTS) main.o
+#	$(CXX) $(LDFLAGS) $(OBJECTS) -o $(BIN_DIR)/$@ $(LIBS) $(TEST_LIBS)
 
 clean:
 	rm -rfv *.o $(OBJ_DIR)/*.o 

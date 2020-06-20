@@ -1,12 +1,12 @@
 /*
- * ST
+ * TEXTURE 
+ * 
+ * Stefan Wong 2020
  */
 
-#include <iostream>
-#include <iomanip>
-#include <fstream>
-#include "st.hpp"
+#include "Texture.hpp"
+
+
 
 // ======== TEXTURE ======== //
 Texture::Texture() : id(0), tex_type("") {} 
-

@@ -8,47 +8,36 @@
 #include <string>
 // GL stuff
 #include <GL/glew.h>
-#ifdef __APPLE__
-    #define GL_SILENCE_DEPRECATION      // GL isn't good enough for apple now, but neither am I
-    #include <GL/glut.h>
-#else
-    #include <GLUT/glut.h>
-#endif /*__APPLE__*/
+#include <SDL2/SDL.h>
 
-
-// project stuff
-#include "st.hpp"
 #include "Shader.hpp"
+#include "Util.hpp"
 
-//void st_disp_func(void)
-//{
-//
-//
-//}
+
+Shader the_shader;
 
 
 
-
+// ======== ENTRY POINT  ======== // 
 int main(int argc, char* argv[])
 {
-    glutInitWindowSize(640, 480);       // start with a small window
-    // NOTE : are these all deprecated?
-    glutInit(&argc, argv);
-    
-    glutInitDisplayMode(GLUT_RGB | GLUT_DOUBLE);
-    glutCreateWindow("test window");
-
-    //glutDisplayFunc(st_disp_func);
-
-
+    int status;
     // hardcode test shader for now 
     std::string test_vert_shader = "shader/test.vert";
     std::string test_frag_shader = "shader/test.frag";
 
-    Shader test_shader;
+    // Set up SDL 
+    SDL_Window* window;
+    SDL_GLContext gl_ctx;
+
+
+    window = create_window();
+    gl_ctx = SDL_GL_CreateContext(window);
+    glewExperimental = GL_TRUE;
+    glewInit();
     
-    test_shader.load(test_vert_shader, test_frag_shader);
-    if(!test_shader.ok())
+    status = the_shader.load(test_vert_shader, test_frag_shader);
+    if(status < 0 || !the_shader.ok())
     {
         std::cerr << "[" << __func__ << "] failed to load shader files [" 
             << test_vert_shader << "] and [" << test_frag_shader 

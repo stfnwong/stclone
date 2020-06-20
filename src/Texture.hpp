@@ -1,12 +1,10 @@
 /*
- * ST
+ * TEXTURE 
+ * 
+ * Stefan Wong 2020
  */
 
-#ifndef __ST_HPP
-#define __ST_HPP
-
-#include <GL/glew.h>
-#include <string>
+#ifndef __SHADER_HPP
 
 /*
  * Texture 
@@ -19,13 +17,8 @@ struct Texture
     public:
         Texture();
         Texture& operator=(const Texture& that) = default;
+        // TODO : load, etc
 };
 
-
-
-
-// Display function
-
-
-
-#endif /*__ST_HPP*/
+#define __SHADER_HPP
+#endif /*__SHADER_HPP*/

@@ -17,10 +17,10 @@
 class Shader
 {
     GLint program;
-    GLint shader[2];
+    GLuint shader[2];
 
     private:
-        void init(const std::string& vert_fname, const std::string& frag_fname);
+        int init(const std::string& vert_fname, const std::string& frag_fname);
 
     public:
         Shader();
@@ -32,7 +32,7 @@ class Shader
         
         bool ok(void) const;
         //void use(void);
-        void load(const std::string& vert_fname, const std::string& frag_fname);
+        int load(const std::string& vert_fname, const std::string& frag_fname);
         // TODO : methods to set uniform ? 
 };
 

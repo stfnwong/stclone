@@ -56,7 +56,10 @@ std::string load_shader(const std::string& filename)
         }
     }
     else
+    {
         std::cerr << "[" << __func__ << "] failed to loader shader from file " << filename << std::endl;
+        return std::string("");
+    }
 
     return output;
 }
@@ -77,7 +80,7 @@ Shader::Shader(const std::string& vert_fname, const std::string& frag_fname)
     this->init(vert_fname, frag_fname);
 }
 
-void Shader::init(const std::string& vert_fname, const std::string& frag_fname)
+int Shader::init(const std::string& vert_fname, const std::string& frag_fname)
 {
     GLint success;
     GLchar info_log[512];
@@ -85,12 +88,15 @@ void Shader::init(const std::string& vert_fname, const std::string& frag_fname)
     std::string vshader_source = load_shader(vert_fname);
     std::string fshader_source = load_shader(frag_fname);
 
+    if(vshader_source == "" || fshader_source == "")
+        return -1;
+
     // For now, lets just put all the shader code here and worry about cleaning up later
     const GLchar* vs_code = vshader_source.c_str(); 
     const GLchar* fs_code = fshader_source.c_str(); 
 
     // vertex shader 
-    this->shader[0] = glCreateShader(GL_VERTEX_SHADER);
+    this->shader[0] = glCreateShader(GL_VERTEX_SHADER);   // <- segfault?
     glShaderSource(this->shader[0], 1, &vs_code, NULL);
     glCompileShader(this->shader[0]);
     glGetShaderiv(this->shader[0], GL_COMPILE_STATUS, &success);
@@ -127,16 +133,21 @@ void Shader::init(const std::string& vert_fname, const std::string& frag_fname)
 
     glValidateProgram(this->program);
     check_shader_error(this->program, GL_VALIDATE_STATUS, true, "ERROR: Failed to validate program");
+
+    return 0;
 }
 
 Shader::~Shader() 
 {
-    for(int i = 0; i < 2; ++i)
+    if(this->program > 0)
     {
-        glDetachShader(this->program, this->shader[i]);
-        glDeleteShader(this->shader[i]);
+        for(int i = 0; i < 2; ++i)
+        {
+            glDetachShader(this->program, this->shader[i]);
+            glDeleteShader(this->shader[i]);
+        }
+        glDeleteProgram(this->program);
     }
-    glDeleteProgram(this->program);
 }
 
 /*
@@ -151,7 +162,7 @@ bool Shader::ok(void) const
 /*
  * Shader::load()
  */
-void Shader::load(const std::string& vert_fname, const std::string& frag_fname)
+int Shader::load(const std::string& vert_fname, const std::string& frag_fname)
 {
-    this->init(vert_fname, frag_fname);
+    return this->init(vert_fname, frag_fname);
 }

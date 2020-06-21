@@ -57,8 +57,5 @@ TEST_CASE("test_shader", "[classic]")
     destroy_window(test_window);
 }
 
-
-
-// TODO : also test shader load on construction
-
+// TODO ; how can we test shader use?
 

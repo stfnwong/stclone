@@ -38,7 +38,7 @@ TEST_CASE("test_shader", "[classic]")
     {
         Shader test_shader;
 
-        REQUIRE(false == test_shader.ok());
+        REQUIRE(test_shader.ok() == false);
     }
 
     SECTION("test_shader_load")
@@ -50,6 +50,7 @@ TEST_CASE("test_shader", "[classic]")
 
         status = test_shader.load(in_vert_shader, in_frag_shader);
         REQUIRE(status == 0);
+        REQUIRE(test_shader.ok() == true);
     }
 
     SDL_GL_DeleteContext(test_context);

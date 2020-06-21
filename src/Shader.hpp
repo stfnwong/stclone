@@ -11,6 +11,7 @@
 #include <GL/glew.h>
 #include <string>
 
+
 /*
  * Shader
  */
@@ -31,9 +32,15 @@ class Shader
         Shader& operator=(const Shader& that) = delete;
         
         bool ok(void) const;
-        //void use(void);
+        void use(void);
         int load(const std::string& vert_fname, const std::string& frag_fname);
-        // TODO : methods to set uniform ? 
+
+        int getAttrib(const std::string& a) const;
+        int getUniform(const std::string& u) const;
+        void setUniform2f(const std::string& uname, float x, float y);
+        void setUniform3f(const std::string& uname, float x, float y, float z);
+        void setUniform4f(const std::string& uname, float x, float y, float z, float w);
+
 };
 
 #endif /*__SHADER_HPP*/

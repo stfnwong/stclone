@@ -9,6 +9,7 @@ uniform sampler2D tex;
 in vec4 out_color;
 in vec2 out_texcoord;
 in float out_factor;
+
 out vec4 frag_color;
 
 void main(void)

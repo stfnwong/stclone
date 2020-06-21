@@ -14,7 +14,7 @@ out vec2 out_texcoord;
 out float out_factor;
 
 uniform vec2 v2Offset;
-uniform mat3 matProj;
+uniform mat4 matProj;
 
 void main(void)
 {

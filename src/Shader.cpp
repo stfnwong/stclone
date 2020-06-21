@@ -8,6 +8,7 @@
 
 #include <iostream>
 #include <fstream>
+#include <SDL2/SDL.h>
 #include "Shader.hpp"
 
 // ======== SHADER ======== //
@@ -96,7 +97,8 @@ int Shader::init(const std::string& vert_fname, const std::string& frag_fname)
     const GLchar* fs_code = fshader_source.c_str(); 
 
     // vertex shader 
-    this->shader[0] = glCreateShader(GL_VERTEX_SHADER);   // <- segfault?
+    std::cout << "[" << __func__ << "] compiling shader [" << vert_fname << "]" << std::endl;
+    this->shader[0] = glCreateShader(GL_VERTEX_SHADER);   
     glShaderSource(this->shader[0], 1, &vs_code, NULL);
     glCompileShader(this->shader[0]);
     glGetShaderiv(this->shader[0], GL_COMPILE_STATUS, &success);
@@ -105,9 +107,11 @@ int Shader::init(const std::string& vert_fname, const std::string& frag_fname)
         glGetShaderInfoLog(this->shader[0], 512, NULL, info_log);
         std::cerr << "[" << __func__ << "] shader compilation log '" 
             << info_log << "' " << std::endl;
+        return -1;
     }
 
     // fragment shader
+    std::cout << "[" << __func__ << "] compiling shader [" << frag_fname << "]" << std::endl;
     this->shader[1] = glCreateShader(GL_FRAGMENT_SHADER);
     glShaderSource(this->shader[1], 1, &fs_code, NULL);
     glCompileShader(this->shader[1]);
@@ -117,6 +121,7 @@ int Shader::init(const std::string& vert_fname, const std::string& frag_fname)
         glGetShaderInfoLog(this->shader[1], 512, NULL, info_log);
         std::cerr << "[" << __func__ << "] shader compilation log '" 
             << info_log << "' " << std::endl;
+        return -1;
     }
 
     // Create the program
@@ -158,6 +163,12 @@ bool Shader::ok(void) const
     return (this->program > 0) ? true : false;
 }
 
+void Shader::use(void)
+{
+    if(this->program > 0)
+        glUseProgram(this->program);
+}
+
 
 /*
  * Shader::load()
@@ -166,3 +177,40 @@ int Shader::load(const std::string& vert_fname, const std::string& frag_fname)
 {
     return this->init(vert_fname, frag_fname);
 }
+
+/*
+ * Shader::getAttrib()
+ */
+int Shader::getAttrib(const std::string& a) const
+{
+    return glGetAttribLocation(this->program, a.c_str());
+}
+
+/*
+ * Shader::getUniform()
+ */
+int Shader::getUniform(const std::string& u) const
+{
+    return glGetUniformLocation(this->program, u.c_str());
+}
+
+void Shader::setUniform2f(const std::string& uname, float x, float y)
+{
+    int u =  this->getUniform(uname);
+    glUniform2f(u, x, y);
+}
+
+void Shader::setUniform3f(const std::string& uname, float x, float y, float z)
+{
+    int u =  this->getUniform(uname);
+    glUniform3f(u, x, y, z);
+}
+
+void Shader::setUniform4f(const std::string& uname, float x, float y, float z, float w)
+{
+    int u =  this->getUniform(uname);
+    glUniform4f(u, x, y, z, w);
+}
+
+
+

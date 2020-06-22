@@ -34,6 +34,7 @@ TEST_CASE("test_shader", "[classic]")
     glewExperimental = GL_TRUE;
     glewInit();
 
+    // ==== Shader init
     SECTION("test_shader_init")
     {
         Shader test_shader;
@@ -41,6 +42,14 @@ TEST_CASE("test_shader", "[classic]")
         REQUIRE(test_shader.ok() == false);
     }
 
+    SECTION("test_shader_init_from_file")
+    {
+        Shader test_shader(in_vert_shader, in_frag_shader);
+
+        REQUIRE(test_shader.ok() == true);
+    }
+
+    // ==== Shader load
     SECTION("test_shader_load")
     {
         Shader test_shader;

@@ -6,7 +6,7 @@ Sample vertex shader for 'unit' style testing
 
 in vec3 in_pos;
 in vec4 in_color;
-in vec3 in_texcoord;
+in vec2 in_texcoord;
 in float in_factor;
 
 out vec4 out_color;

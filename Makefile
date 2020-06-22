@@ -12,7 +12,7 @@ PROGRAM_DIR=program
 
 # Platform specific GL libs 
 ifeq ($(shell uname -s), Darwin)
-	GLLIBS=-framework OpenGL -lGLEW -lSDL2 -lGL
+	GLLIBS=-framework OpenGL -lGLEW -lSDL2 
 else
 	GLLIBS=-lSDL2 -lGLEW -lGL
 endif

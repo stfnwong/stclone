@@ -23,6 +23,8 @@ struct ShaderUniforms
     GLuint i_mouse;
 };
 
+const std::string default_vert_shader_fname = "shader/default.vert";
+const std::string default_frag_shader_fname = "shader/default.frag";
 
 Shader the_shader;
 ShaderUniforms uniforms;
@@ -47,7 +49,7 @@ int main(int argc, char* argv[])
     int status;
     // hardcode test shader for now 
     std::string vert_shader_fname = "shader/default.vert";
-    std::string frag_shader_fname = "shader/default.frag";
+    std::string frag_shader_fname = "shader/mandelbulb.frag";
 
     // Set up SDL 
     SDL_Window* window;

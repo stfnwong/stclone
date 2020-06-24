@@ -30,7 +30,7 @@ void check_shader_error(GLuint shader, GLuint flag, bool is_program, const std::
         else
             glGetShaderInfoLog(shader, sizeof(error), NULL, error);
 
-        std::cerr << "[" << __func__ << "] " << err_msg << " '"
+        std::cout << "[" << __func__ << "] " << err_msg << " '"
             << error << "'" << std::endl;
     }
 }
@@ -58,7 +58,7 @@ std::string load_shader(const std::string& filename)
     }
     else
     {
-        std::cerr << "[" << __func__ << "] failed to loader shader from file " << filename << std::endl;
+        std::cout << "[" << __func__ << "] failed to loader shader from file " << filename << std::endl;
         return std::string("");
     }
 
@@ -105,7 +105,7 @@ int Shader::init(const std::string& vert_fname, const std::string& frag_fname)
     if(!success)
     {
         glGetShaderInfoLog(this->shader[0], 512, NULL, info_log);
-        std::cerr << "[" << __func__ << "] shader compilation log '" 
+        std::cout << "[" << __func__ << "] shader compilation log '" 
             << info_log << "' " << std::endl;
         return -1;
     }
@@ -119,7 +119,7 @@ int Shader::init(const std::string& vert_fname, const std::string& frag_fname)
     if(!success)
     {
         glGetShaderInfoLog(this->shader[1], 512, NULL, info_log);
-        std::cerr << "[" << __func__ << "] shader compilation log '" 
+        std::cout << "[" << __func__ << "] shader compilation log '" 
             << info_log << "' " << std::endl;
         return -1;
     }
@@ -197,19 +197,22 @@ int Shader::getUniform(const std::string& u) const
 void Shader::setUniform2f(const std::string& uname, float x, float y)
 {
     int u =  this->getUniform(uname);
-    glUniform2f(u, x, y);
+    if(u != -1)
+        glUniform2f(u, x, y);
 }
 
 void Shader::setUniform3f(const std::string& uname, float x, float y, float z)
 {
     int u =  this->getUniform(uname);
-    glUniform3f(u, x, y, z);
+    if(u != -1)
+        glUniform3f(u, x, y, z);
 }
 
 void Shader::setUniform4f(const std::string& uname, float x, float y, float z, float w)
 {
     int u =  this->getUniform(uname);
-    glUniform4f(u, x, y, z, w);
+    if(u != -1)
+        glUniform4f(u, x, y, z, w);
 }
 
 

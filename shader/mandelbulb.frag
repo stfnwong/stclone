@@ -17,7 +17,7 @@ uniform vec2  i_resolution;
 uniform vec4  i_mouse;
 
 // constants for this shader
-const int MAX = 8;
+const int MAX = 2;
 const float PI = 3.1415927;
 const vec3 BG_COLOR = vec3(0.0, 0.0, 0.0);
 const float INF = 99999999.0;
@@ -25,7 +25,7 @@ vec3 LIGHT_DIRECTION = vec3(0.0, 1.0, 0.5);
 
 
 struct Sphere
-    {
+{
     vec3 p;
     float r;
 };
@@ -135,7 +135,7 @@ float sphere_intersect(Ray ray, Sphere sphere, out vec3 color)
         vec3 normal = normalize(ip - sphere.p);
 
         vec3 sphere_color = vec3(1.0, 1.0, 0.0);
-        color = clamp(vec3(sphere_color) * dot(normal, LIGHT_DIRECTION), vec3(0.0), vec3(1.0));
+        color = clamp(vec3(sphere_color) * dot(normal, LIGHT_DIRECTION * 0.25 * cos(i_time)), vec3(0.0), vec3(1.0));
         color += sphere_color * vec3(0.1);
 
         return t;
@@ -144,6 +144,7 @@ float sphere_intersect(Ray ray, Sphere sphere, out vec3 color)
     return INF;
 }
 
+// TODO : get rid of this setup (just have a single mandelbulb)
 void setup_scene(void)
 {
     Sphere sphere0;
@@ -177,15 +178,23 @@ vec3 trace(Ray ray)
     vec3 closest_color = BG_COLOR;
     float closest_dist = INF;
 
-    for(int i = 0; i < sphere_count; ++i)
+    //for(int i = 0; i < sphere_count; ++i)
+    //{
+    //    vec3 current_color;
+    //    float current_dist = sphere_intersect(ray, sphere_container[i], current_color);
+    //    if(closest_dist > current_dist)
+    //    {
+    //        closest_dist = current_dist;
+    //        closest_color = current_color;
+    //    }
+    //}
+
+    vec3 current_color;
+    float current_dist = sphere_intersect(ray, sphere_container[0], current_color);
+    if(closest_dist > current_dist)
     {
-        vec3 current_color;
-        float current_dist = sphere_intersect(ray, sphere_container[i], current_color);
-        if(closest_dist > current_dist)
-        {
-            closest_dist = current_dist;
-            closest_color = current_color;
-        }
+        closest_dist = current_dist;
+        closest_color = current_color;
     }
 
     return closest_color;
@@ -215,8 +224,7 @@ void mainImage(out vec4 frag_color, in vec2 frag_coord)
     color_sum = color_sum / kernel_size * kernel_size;
     
     Ray ray = get_ray(uv);
-    vec3 mb_color = vec3(1.0, 0.0, 0.5) * trace_dist_est(ray) * 1.1 + 0.1;
-
+    vec3 mb_color = vec3(1.0, 0.5 * sin(i_time), cos(i_time)) * trace_dist_est(ray) * 1.1 + 0.1;
 
     frag_color = vec4(mb_color, 1.0);
 }

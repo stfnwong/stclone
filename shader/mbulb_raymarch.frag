@@ -7,6 +7,7 @@
 // fractal by
 // http://blog.hvidtfeldts.net/index.php/2011/09/distance-estimated-3d-fractals-v-the-mandelbulb-different-de-approximations/
 
+#version 330 core 
 
 #define MARCHINGITERATIONS 64
 
@@ -17,6 +18,16 @@
 
 #define MAXMANDELBROTDIST 1.5
 #define MANDELBROTSTEPS 64
+
+
+// Uniforms
+in vec2 position_out;
+out vec4 out_color;
+
+uniform float i_time;
+uniform float i_time_delta;
+uniform vec2  i_resolution;
+uniform vec4  i_mouse;
 
 // cosine based palette, 4 vec3 params
 vec3 cosineColor( in float t, in vec3 a, in vec3 b, in vec3 c, in vec3 d )
@@ -31,7 +42,7 @@ vec3 palette (float t) {
 // returns the distance to the set on the x coordinate 
 // and the color on the y coordinate
 vec2 DE(vec3 pos) {
-    float Power = 3.0+4.0*(sin(iTime/30.0)+1.0);
+    float Power = 3.0+4.0*(sin(i_time/30.0)+1.0);
 	vec3 z = pos;
 	float dr = 1.0;
 	float r = 0.0;
@@ -94,23 +105,23 @@ vec2 trace  (vec3 origin, vec3 ray) {
 void mainImage( out vec4 fragColor, in vec2 fragCoord )
 {
     // Normalized pixel coordinates (from 0 to 1)
-    vec2 uv = fragCoord/iResolution.xy;
+    vec2 uv = fragCoord/i_resolution.xy;
 	// Pixel coordinates from -1 to 1
     uv = uv * 2.0 - 1.0;
     // Adjusting aspect ratio
-    uv.x *= iResolution.x / iResolution.y;
+    uv.x *= i_resolution.x / i_resolution.y;
     
     //ray direction (camera is at (0,0,0), view plane is at 0,0,1)
     vec3 ray = normalize(vec3 (uv,1.0));
 
     //ROTATING THE CAMERA (rotating the ray)
-    float rotAngle = 0.4+iTime/40.0 + 6.28*iMouse.x / iResolution.x;
+    float rotAngle = 0.4+i_time/40.0 + 6.28*i_mouse.x / i_resolution.x;
     //rotation matrix around the y axis
     ray.xz *= mat2(cos(rotAngle), -sin(rotAngle), sin(rotAngle), cos(rotAngle));
     
     //camera position (rays origin)
-    float camDist = DISTANCE * iMouse.y / iResolution.y;
-    if (iMouse.xy==vec2(0)) camDist = DISTANCE*0.55;
+    float camDist = DISTANCE * i_mouse.y / i_resolution.y;
+    if (i_mouse.xy==vec2(0)) camDist = DISTANCE*0.55;
     vec3 origin = vec3 (camDist * sin(rotAngle),0.0,-camDist *cos(rotAngle));           
     
     //tracing the ray (getting the distance of the closest object in the ray direction)
@@ -125,4 +136,9 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
     
     // Output to screen
     fragColor = vec4(palette(depth.y)*fog,0.0);
+}
+
+void main(void)
+{
+    mainImage(out_color, (0.5 + 0.5 * position_out) * i_resolution.xy);
 }

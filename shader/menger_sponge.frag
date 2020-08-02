@@ -3,7 +3,8 @@
 */
 #version 330 core 
 
-#define NUM_INTERSECTION_ITER 64
+#define NUM_INTERSECTION_ITERS 64
+#define NUM_SHADOW_ITERS 64
 
 // Uniforms
 in vec2 position_out;
@@ -50,8 +51,11 @@ vec4 map(in vec3 p)
     float d = sdf_box3d(p,vec3(1.0));
     vec4 res = vec4( d, 1.0, 0.0, 0.0 );
 
-    float ani = smoothstep( -0.2, 0.2, -cos(0.5*i_time) );
-	float off = 1.5*sin( 0.01*i_time );
+    //float ani = smoothstep( -0.2, 0.2, -cos(0.5*i_time) );
+	//float off = 1.5*sin( 0.01*i_time );
+    float ani = smoothstep( -0.2, 0.2, 0.5);
+	//float off = 1.5*sin( 0.01*i_time );
+    float off = 0.0;
 	
     float s = 1.0;
     for( int m=0; m<4; m++ )
@@ -84,7 +88,7 @@ vec4 intersect(in vec3 ro, in vec3 rd)
     vec4 h = vec4(1.0);
     
     // Do a fixed number of iterations 
-    for(int i = 0; i < NUM_INTERSECTION_ITER; ++i)
+    for(int i = 0; i < NUM_INTERSECTION_ITERS; ++i)
     {
         if(h.x < 0.002 || t > 10.0)   //
             break;
@@ -109,7 +113,7 @@ float shadow(in vec3 ro, in vec3 rd, float min_t, float k)
     float t = min_t;        
     float h = 1.0;
 
-    for(int i = 0; i < 32; ++i)
+    for(int i = 0; i < NUM_SHADOW_ITERS; ++i)
     {
         h = map(ro + rd * t).x;
         res = min(res, k * h / t);
@@ -136,6 +140,7 @@ vec3 calc_normal(in vec3 p)
     return normalize(nor);
 }
 
+// position of ,light source
 vec3 light = normalize(vec3(1.0, 0.9, 0.3));
 /*
     render()
@@ -143,7 +148,13 @@ vec3 light = normalize(vec3(1.0, 0.9, 0.3));
 */
 vec3 render(in vec3 ro, in vec3 rd)
 {
-    vec3 col = mix(vec3(0.1, 0.15, 0.24) * 0.5, vec3(0.56, 0.7, 0.7), 0.5 + 0.5 * rd.y);  // z = dist from camera, try that
+    vec3 col1 = vec3(0.11, 0.12, 0.7);
+    vec3 col2 = vec3(0.34, 0.32, 0.11);
+    float mix_factor = 0.55;
+    
+    vec3 col = mix(mix_factor * col1, col2, 0.5 + 0.5 * rd.z);
+    
+    //vec3 col = mix(vec3(0.1, 0.15, 0.24) * 0.5, vec3(0.56, 0.7, 0.7), 0.5 + 0.5 * rd.z);  // z = dist from camera, try that
     vec4 tmat = intersect(ro, rd);      // origin, direction
 
     if(tmat.x > 0.0)
@@ -151,13 +162,15 @@ vec3 render(in vec3 ro, in vec3 rd)
         vec3 pos = ro + tmat.x * rd;
         vec3 norm = calc_normal(pos);
 
-        float diff = max(0.1 + 0.9  * dot(norm, light), 0.00);
-        float shad = shadow(pos, light, 0.02, 48.5);
+        float occ = tmat.y;
+        float diff = max(0.1 + 0.77  * dot(norm, light), 0.00);
+        float shad = shadow(pos, light, 0.02, 66.5);
+        float back = max(0.4 + 0.6 * dot(norm, vec3(-light.x, light.y, -light.z)), 0.0);
         //shad = shad * max(0.1 + 0.9 * dot(norm, light), 0.0) * tmat.y;
         vec3 lin = vec3(0.0);
-        lin += 1.00 * diff * vec3(1.1, 0.8, 0.6) * shad;
-        lin += 0.25 * tmat.y * vec3(0.15, 0.17, 0.20);
-
+        lin += 1.00 * diff * vec3(1.1, 0.83, 0.6) * shad;
+        lin += 0.25 * occ * vec3(0.15, 0.17, 0.08);
+        lin += 0.22 * back * vec3(1.00, 1.00, 1.00) * (0.5 + 0.5 * occ);
 
         // TODO: provide more sophisticated colors
         vec3 matcol = vec3(
@@ -168,7 +181,7 @@ vec3 render(in vec3 ro, in vec3 rd)
         col = matcol * lin;
     }
 
-    return pow(col, vec3(0.22));
+    return pow(col, vec3(0.44));
 }
 
 
@@ -176,8 +189,8 @@ void mainImage(out vec4 frag_color, in vec2 frag_coord)
 {
     // camera position 
     // For this we just made the camera rotate around x 
-    //vec3 cam_pos = 0.1 * vec3(2.5 * sin(0.25 * i_time), cos(i_time), cos(i_time));
-    vec3 cam_pos = 0.1 * vec3(2.5 * cos(i_time), 1.0, 1.0);
+    vec3 cam_pos = 1.1 * vec3(2.5 * sin(0.25 * i_time), 1.1 * cos(i_time * 1.13), cos(0.13 * i_time));
+    //vec3 cam_pos = 0.1 * vec3(2.5 * cos(i_time), 0.33 * sin(0.25 * i_time), 0.5 * sin(2.02 * i_time));
 
     // TODO: add anti-aliasing 
     vec2 p = (2.0 * frag_coord - i_resolution.xy) / i_resolution.y;

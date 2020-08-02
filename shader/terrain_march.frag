@@ -156,7 +156,7 @@ void mainImage(out vec4 frag_color, in vec2 frag_coord)
 	float dist = terrain(cam_pos, (
 		mat4(vec4(s, 0.0),vec4(u, 0.0),vec4(-f, 0.0),vec4(0.0, 0.0, 0.0, 1.0))
 		*vec4(normalize(vec3(f_coord - scr / 2.0, -scr.y / tan(radians(73.0+FOV) / 2.0))), 0.0)
-	).xyz, 1.0, 100.0, t*3.0);
+	).xyz, 1.0, 100.0, i_time*3.0);
 
     if(dist > 100.0)
     {

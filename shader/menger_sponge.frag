@@ -56,7 +56,7 @@ vec4 map(in vec3 p)
 	//float off = 1.5*sin( 0.01*i_time );
     float ani = smoothstep( -0.2, 0.2, 0.5) * 0.25 * sin(0.01 * i_time);
 	//float off = 5.45*sin( 0.01*i_time ) * 0.25 * cos(2.22 * i_time);
-    float off = 0.0;
+    float off = 8.0 * cos(0.3 * i_time) + 0.55 * sin(0.25 * i_time);
 	
     float s = 1.0;
     for( int m=0; m<NUM_ROTATION_ITERS; m++ )
@@ -149,11 +149,11 @@ vec3 light = normalize(vec3(1.0, 0.9, 0.3));
 */
 vec3 render(in vec3 ro, in vec3 rd)
 {
-    vec3 col1 = vec3(0.11, 0.12, 0.7);
-    vec3 col2 = vec3(0.34, 0.32, 0.31);
-    float mix_factor = 0.55;
+    vec3 col1 = vec3(0.31, 0.32, 0.31);
+    vec3 col2 = vec3(0.54, 0.92, 0.51);
+    float mix_factor = 0.50;
     
-    vec3 col = mix(mix_factor * col1, col2, 0.5 + 0.5 * rd.z);
+    vec3 col = mix(col1, col2, 0.5 * rd.x);
     
     //vec3 col = mix(vec3(0.1, 0.15, 0.24) * 0.5, vec3(0.56, 0.7, 0.7), 0.5 + 0.5 * rd.z);  // z = dist from camera, try that
     vec4 tmat = intersect(ro, rd);      // origin, direction
@@ -164,14 +164,16 @@ vec3 render(in vec3 ro, in vec3 rd)
         vec3 norm = calc_normal(pos);
 
         float occ = tmat.y;
-        float diff = max(0.1 + 0.77  * dot(norm, light), 0.00);
-        float shad = shadow(pos, light, 0.02, 76.5);
+        float diff = max(0.1 + 0.87  * dot(norm, light), 0.00);
+        float shad = shadow(pos, light, 0.03, 36.5);
         float back = max(0.4 + 0.6 * dot(norm, vec3(-light.x, light.y, -light.z)), 0.0);
+        float sky = 0.5 + 0.5 * norm.y;
         //shad = shad * max(0.1 + 0.9 * dot(norm, light), 0.0) * tmat.y;
         vec3 lin = vec3(0.0);
-        lin += 1.00 * diff * vec3(0.2, 0.73, 0.6) * shad;
-        lin += 0.25 * occ * vec3(0.15, 0.17, 0.08);
+        lin += 1.00 * diff * vec3(0.2, 0.33, 0.6) * shad;
+        lin += 0.25 * occ * vec3(0.15, 0.27, 0.18);
         lin += 0.22 * back * vec3(1.00, 1.00, 1.00) * (0.5 + 0.5 * occ);
+        lin += 0.50 * sky * vec3(0.10, 0.10, 0.11) * occ;
 
         // TODO: provide more sophisticated colors
         vec3 matcol = vec3(
@@ -182,7 +184,7 @@ vec3 render(in vec3 ro, in vec3 rd)
         col = matcol * lin;
     }
 
-    return pow(col, vec3(0.44));
+    return pow(col, vec3(0.4545));
 }
 
 
@@ -190,7 +192,7 @@ void mainImage(out vec4 frag_color, in vec2 frag_coord)
 {
     // camera position 
     // For this we just made the camera rotate around x 
-    vec3 cam_pos = 1.1 * vec3(1.5 * sin(0.25 * i_time), 0.1 * cos(i_time * 1.13), cos(0.13 * i_time));
+    vec3 cam_pos = 0.6 * vec3(0.8 * sin(0.25 * i_time), 0.15 * cos(i_time * 1.13), 0.2 * cos(0.13 * i_time));
     //vec3 cam_pos = 0.1 * vec3(2.5 * cos(i_time), 0.33 * sin(0.25 * i_time), 0.5 * sin(2.02 * i_time));
 
     // TODO: add anti-aliasing 

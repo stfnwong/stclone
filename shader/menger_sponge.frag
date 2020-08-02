@@ -41,14 +41,39 @@ float sdf_cross(in vec3 p)
     return min(da, min(db, dc));  // union of 3 cubes
 }
 
+const mat3 ma = mat3( 0.60, 0.00,  0.80,
+                      0.00, 1.00,  0.00,
+                     -0.80, 0.00,  0.60 );
 
 vec4 map(in vec3 p)
 {
-    float d = sdf_box3d(p, vec3(1.0));        // distance to unit cube
-    float c = sdf_cross(p * 3.0) / 3.0;
-    d = max(d, -c);
+    float d = sdf_box3d(p,vec3(1.0));
+    vec4 res = vec4( d, 1.0, 0.0, 0.0 );
 
-    return vec4(d, 1.0, 1.0, 1.0);
+    float ani = smoothstep( -0.2, 0.2, -cos(0.5*i_time) );
+	float off = 1.5*sin( 0.01*i_time );
+	
+    float s = 1.0;
+    for( int m=0; m<4; m++ )
+    {
+        p = mix( p, ma*(p+off), ani );
+	   
+        vec3 a = mod( p*s, 2.0 )-1.0;
+        s *= 3.0;
+        vec3 r = abs(1.0 - 3.0*abs(a));
+        float da = max(r.x,r.y);
+        float db = max(r.y,r.z);
+        float dc = max(r.z,r.x);
+        float c = (min(da,min(db,dc))-1.0)/s;
+
+        if( c>d )
+        {
+          d = c;
+          res = vec4( d, min(res.y,0.2*da*db*dc), (1.0+float(m))/4.0, 0.0 );
+        }
+    }
+
+    return res;
 }
 
 
@@ -75,9 +100,30 @@ vec4 intersect(in vec3 ro, in vec3 rd)
     return ip;
 }
 
+/*
+    shadow()
+*/
+float shadow(in vec3 ro, in vec3 rd, float min_t, float k)
+{
+    float res = 1.0;
+    float t = min_t;        
+    float h = 1.0;
 
-// normal by central differences 
-// This is just the naive technique, next step is to use the tetrahedron method
+    for(int i = 0; i < 32; ++i)
+    {
+        h = map(ro + rd * t).x;
+        res = min(res, k * h / t);
+        t += clamp(h, 0.0005, 0.1);
+    }
+
+    return clamp(res, 0.0, 1.0);
+}
+
+/*
+    calc_normal()
+    normal by central differences 
+    This is just the naive technique, next step is to use the tetrahedron method
+*/
 vec3 calc_normal(in vec3 p)
 {
     vec3 eps = vec3(0.0001, 0.0, 0.0);
@@ -90,6 +136,7 @@ vec3 calc_normal(in vec3 p)
     return normalize(nor);
 }
 
+vec3 light = normalize(vec3(1.0, 0.9, 0.3));
 /*
     render()
     Raymarch routine 
@@ -97,23 +144,31 @@ vec3 calc_normal(in vec3 p)
 vec3 render(in vec3 ro, in vec3 rd)
 {
     vec3 col = mix(vec3(0.1, 0.15, 0.24) * 0.5, vec3(0.56, 0.7, 0.7), 0.5 + 0.5 * rd.y);  // z = dist from camera, try that
-    
     vec4 tmat = intersect(ro, rd);      // origin, direction
 
     if(tmat.x > 0.0)
     {
-        //vec3 pos = rp + tmat.x * rd;
-        //vec3 norm = calc_normal(pos);
+        vec3 pos = ro + tmat.x * rd;
+        vec3 norm = calc_normal(pos);
+
+        float diff = max(0.1 + 0.9  * dot(norm, light), 0.00);
+        float shad = shadow(pos, light, 0.02, 48.5);
+        //shad = shad * max(0.1 + 0.9 * dot(norm, light), 0.0) * tmat.y;
+        vec3 lin = vec3(0.0);
+        lin += 1.00 * diff * vec3(1.1, 0.8, 0.6) * shad;
+        lin += 0.25 * tmat.y * vec3(0.15, 0.17, 0.20);
+
 
         // TODO: provide more sophisticated colors
-        vec3 col = vec3(
+        vec3 matcol = vec3(
             0.5 * 0.5 + cos(0.0 + 2.0 * tmat.z),
             0.5 * 0.5 + cos(1.0 + 2.0 * tmat.z),
             0.5 * 0.5 + cos(2.0 + 2.0 * tmat.z)
         );
+        col = matcol * lin;
     }
 
-    return pow(col, vec3(0.45));
+    return pow(col, vec3(0.22));
 }
 
 
@@ -121,7 +176,8 @@ void mainImage(out vec4 frag_color, in vec2 frag_coord)
 {
     // camera position 
     // For this we just made the camera rotate around x 
-    vec3 cam_pos = 0.1 * vec3(2.5 * sin(0.25 * i_time), cos(i_time), cos(i_time));
+    //vec3 cam_pos = 0.1 * vec3(2.5 * sin(0.25 * i_time), cos(i_time), cos(i_time));
+    vec3 cam_pos = 0.1 * vec3(2.5 * cos(i_time), 1.0, 1.0);
 
     // TODO: add anti-aliasing 
     vec2 p = (2.0 * frag_coord - i_resolution.xy) / i_resolution.y;

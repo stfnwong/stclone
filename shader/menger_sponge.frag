@@ -5,6 +5,7 @@
 
 #define NUM_INTERSECTION_ITERS 64
 #define NUM_SHADOW_ITERS 64
+#define NUM_ROTATION_ITERS 4
 
 // Uniforms
 in vec2 position_out;
@@ -53,14 +54,14 @@ vec4 map(in vec3 p)
 
     //float ani = smoothstep( -0.2, 0.2, -cos(0.5*i_time) );
 	//float off = 1.5*sin( 0.01*i_time );
-    float ani = smoothstep( -0.2, 0.2, 0.5);
-	//float off = 1.5*sin( 0.01*i_time );
+    float ani = smoothstep( -0.2, 0.2, 0.5) * 0.25 * sin(0.01 * i_time);
+	//float off = 5.45*sin( 0.01*i_time ) * 0.25 * cos(2.22 * i_time);
     float off = 0.0;
 	
     float s = 1.0;
-    for( int m=0; m<4; m++ )
+    for( int m=0; m<NUM_ROTATION_ITERS; m++ )
     {
-        p = mix( p, ma*(p+off), ani );
+        p = mix( p, ma*(p+off), ani ); // translate point p during rotation
 	   
         vec3 a = mod( p*s, 2.0 )-1.0;
         s *= 3.0;
@@ -149,7 +150,7 @@ vec3 light = normalize(vec3(1.0, 0.9, 0.3));
 vec3 render(in vec3 ro, in vec3 rd)
 {
     vec3 col1 = vec3(0.11, 0.12, 0.7);
-    vec3 col2 = vec3(0.34, 0.32, 0.11);
+    vec3 col2 = vec3(0.34, 0.32, 0.31);
     float mix_factor = 0.55;
     
     vec3 col = mix(mix_factor * col1, col2, 0.5 + 0.5 * rd.z);
@@ -164,11 +165,11 @@ vec3 render(in vec3 ro, in vec3 rd)
 
         float occ = tmat.y;
         float diff = max(0.1 + 0.77  * dot(norm, light), 0.00);
-        float shad = shadow(pos, light, 0.02, 66.5);
+        float shad = shadow(pos, light, 0.02, 76.5);
         float back = max(0.4 + 0.6 * dot(norm, vec3(-light.x, light.y, -light.z)), 0.0);
         //shad = shad * max(0.1 + 0.9 * dot(norm, light), 0.0) * tmat.y;
         vec3 lin = vec3(0.0);
-        lin += 1.00 * diff * vec3(1.1, 0.83, 0.6) * shad;
+        lin += 1.00 * diff * vec3(0.2, 0.73, 0.6) * shad;
         lin += 0.25 * occ * vec3(0.15, 0.17, 0.08);
         lin += 0.22 * back * vec3(1.00, 1.00, 1.00) * (0.5 + 0.5 * occ);
 
@@ -189,7 +190,7 @@ void mainImage(out vec4 frag_color, in vec2 frag_coord)
 {
     // camera position 
     // For this we just made the camera rotate around x 
-    vec3 cam_pos = 1.1 * vec3(2.5 * sin(0.25 * i_time), 1.1 * cos(i_time * 1.13), cos(0.13 * i_time));
+    vec3 cam_pos = 1.1 * vec3(1.5 * sin(0.25 * i_time), 0.1 * cos(i_time * 1.13), cos(0.13 * i_time));
     //vec3 cam_pos = 0.1 * vec3(2.5 * cos(i_time), 0.33 * sin(0.25 * i_time), 0.5 * sin(2.02 * i_time));
 
     // TODO: add anti-aliasing 

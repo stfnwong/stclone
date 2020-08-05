@@ -6,6 +6,7 @@
 #define NUM_INTERSECTION_ITERS 64
 #define NUM_SHADOW_ITERS 64
 #define NUM_ROTATION_ITERS 3
+#define NUM_PATHS 32
 
 // Uniforms
 in vec2 position_out;
@@ -60,7 +61,7 @@ vec4 map(in vec3 p)
     //float off = 8.0 * sin(0.025 * i_time) * cos(i_time);
 	
     float s = 1.0;
-    for( int m=0; m<NUM_ROTATION_ITERS; m++ )
+    for( int m=0; m < NUM_ROTATION_ITERS; m++ )
     {
         p = mix( p, ma*(p+off), anim ); // translate point p during rotation
 	   
@@ -142,8 +143,16 @@ vec3 calc_normal(in vec3 p)
     return normalize(nor);
 }
 
+/*
+    pixel_color
+*/
+//vec3 pixel_color(in vec2 pixel, in vec3 resolution)
+//{
+//    return vec3(0.0);
+//}
+
 // position of light source
-vec3 light = normalize(vec3(1.0, 0.9, 0.3));
+vec3 light_pos = normalize(vec3(1.0, 0.9, 0.3));
 
 /*
     render()
@@ -152,8 +161,9 @@ vec3 light = normalize(vec3(1.0, 0.9, 0.3));
 vec3 render(in vec3 ro, in vec3 rd)
 {
     vec3 col1 = vec3(0.31, 0.32, 0.31);
-    vec3 col2 = vec3(0.54, 0.92, 0.51);
+    vec3 col2 = vec3(0.24, 0.22, 0.21);
     float mix_factor = 0.50;
+
     
     vec3 col = mix(col1 * mix_factor, col2, 0.5 * rd.x);     // background color
 
@@ -162,18 +172,19 @@ vec3 render(in vec3 ro, in vec3 rd)
     {
         vec3 pos = ro + tmat.x * rd;
         vec3 norm = calc_normal(pos);
-
+        
         float occ = tmat.y;
-        float diff = max(0.1 + 0.87  * dot(norm, light), 0.00);
-        float shad = shadow(pos, light, 0.001, 44.5);
-        float back = max(0.4 + 0.6 * dot(norm, vec3(-light.x, light.y, -light.z)), 0.0);
-        float sky = 0.5 + 0.5 * norm.y;
-        //shad = shad * max(0.1 + 0.9 * dot(norm, light), 0.0) * tmat.y;
-        vec3 lin = vec3(0.0);
-        lin += 1.00 * diff * vec3(0.2, 1.33, 0.6) * shad;       // oversaturate light here
-        lin += 0.25 * occ * vec3(0.15, 0.27, 0.18);
-        lin += 0.22 * back * vec3(1.00, 1.00, 1.00) * (0.5 + 0.5 * occ);
-        lin += 0.50 * sky * vec3(0.10, 0.10, 0.11) * occ;
+        float sun = clamp(dot(norm, light_pos), 0.0, 1.0);
+        float diff = max(0.1 + 0.87  * dot(norm, light_pos), 0.00);
+        float shad = shadow(pos, light_pos, 0.001, 44.5);
+        float back = max(0.4 + 0.6 * dot(norm, vec3(-light_pos.x, light_pos.y, -light_pos.z)), 0.0);
+        float sky = clamp(0.5 + 0.5 * norm.y, 0.0, 1.0);
+        float indirect = clamp(dot(norm, normalize(light_pos * vec3(-1.0, 0.0, -1.0))), 0.0, 1.0);
+        //shad = shad * max(0.1 + 0.9 * dot(norm, light_pos), 0.0) * tmat.y;
+
+        vec3 lin = sun * vec3(1.64, 1.27, 0.99) * pow(vec3(shad), vec3(1.0, 1.2, 1.5));
+        lin += sky * vec3(0.16, 0.20, 0.28) * occ;
+        lin += indirect * vec3(0.40, 0.28, 0.20) * occ;
 
         vec3 matcol = vec3(
             0.5 * 0.5 + cos(0.0 + 2.0 * tmat.z),
@@ -183,18 +194,26 @@ vec3 render(in vec3 ro, in vec3 rd)
         col = matcol * lin;
     }
 
-    return pow(col, vec3(0.4545));
+    return pow(col, vec3(1.0/2.2));
 }
 
 
 void mainImage(out vec4 frag_color, in vec2 frag_coord)
 {
+    //float shutter_apeture = 0.6;
+    //float fov = 2.5;
+    //float focus_distance = 1.3;
+    //float blur_amt = 0.0015;
+    //int   num_levels = 5;
+
+
     // camera position 
     // For this we just made the camera rotate around x 
     vec3 cam_pos = 0.2 * vec3(2.8 * sin(0.25 * i_time), 10.15 * cos(i_time * 0.13), 25.0 * cos(0.13 * i_time));
     //vec3 cam_pos = 0.1 * vec3(2.5 * cos(i_time), 0.33 * sin(0.25 * i_time), 0.5 * sin(2.02 * i_time));
 
-    // TODO: add anti-aliasing 
+    // Do AA, blur, and so on here
+
     vec2 p = (2.0 * frag_coord - i_resolution.xy) / i_resolution.y;
     vec3 ww = normalize(vec3(0.0) - cam_pos);
     vec3 uu = normalize(cross(vec3(0.0, 1.0, 0.0), ww));        // ww is the cameras w coord

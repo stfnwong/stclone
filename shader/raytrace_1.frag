@@ -37,10 +37,31 @@ float sphere(in vec3 ro, in vec3 rd)
     return (-b - sqrt(h)) / 2.0;
 }
 
-float intersect(in vec3 ro, in vec3 rd)
+float plane(in vec3 ro, in vec3 rd)
 {
-    float t = sphere(ro, rd);       // intersect with a spher
-    return t;
+    // y = 0 for a plane, 
+    // = r0.y + t * rd.y
+    return -ro.y / rd.y;
+}
+
+float intersect(in vec3 ro, in vec3 rd, out float t_res)
+{
+    float id = -1.0;
+    float tsphere = sphere(ro, rd);       // intersect with a sphere
+    float tplane = plane(ro ,rd);        // intersect with a plane
+
+    if(tsphere > 0.0)
+    {
+        id = 1.0;
+        t_res = tsphere;
+    }
+    if(tplane > 0.0 && tplane < t_res)
+    {
+        id = 2.0;
+        t_res = tplane;
+    }
+
+    return id;
 }
 
 
@@ -50,17 +71,25 @@ void mainImage(out vec4 frag_color, in vec2 frag_coord)
     vec2 uv = (2.0 * frag_coord - i_resolution.xy) / i_resolution.y;
 
     // generate a ray with origin ro and direction rd
-    vec3 ro = vec3(0.0, 1.0, 3.0);
-    vec3 rd = normalize(vec3(-1.0 + 2.0 * uv, -1.0));
+    //vec2 correction = vec2(1.78, 1.0);
+    vec3 ro = vec3(0.0, 1.0, 2.0);
+    vec3 rd = normalize(vec3((-1.0 + 2.0 * uv) , -1.0));
     // intersect the ray with the scene
-    float id = intersect(ro, rd);
+    float t;
+    float id = intersect(ro, rd, t);
 
     // default background is a gradient
     vec3 col = vec3(uv.x);
-    if(id > 0.0)
+    //if(id > 0.0)
+    if(id > 0.5 && id < 1.5)
     {
         // if we hit something, draw white
         col = vec3(1.0);
+    }
+    else if(id > 1.5)
+    {
+        // we hit the plane
+        col = vec3(1.0, 0.0, 0.0);
     }
 
 

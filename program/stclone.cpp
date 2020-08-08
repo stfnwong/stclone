@@ -49,7 +49,7 @@ int main(int argc, char* argv[])
     int status;
     // hardcode test shader for now 
     std::string vert_shader_fname = "shader/default.vert";
-    std::string frag_shader_fname = "shader/menger_sponge.frag";
+    std::string frag_shader_fname = "shader/raytrace_1.frag";
 
     // Set up SDL 
     SDL_Window* window;

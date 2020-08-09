@@ -19,16 +19,24 @@ uniform float i_time_delta;
 uniform vec2  i_resolution;
 uniform vec4  i_mouse;
 
-// equation of a sphere centered at the origin
-float sphere(in vec3 ro, in vec3 rd)
+// ======== PRIMITIVES ======== //
+
+/*
+    sphere()
+Equation of a sphere centered at some point given by vec4 oc
+*/
+float sphere(in vec3 ro, in vec3 rd, in vec4 sph)
 {
     // |xyz^2| = r^2, and therefore <xyz, xyz> = r^2
     // xyz = ro + t  * rd
     // rewrite as |ro^2| + t^2 + 2<ro, rd>t - r^2 = 0
     // solve resulting qudratic
-    float r = 1.0;
-    float b = 2.0 * dot(ro, rd);
-    float c = dot(ro, ro) - r * r;
+    //
+    // Now we can specify the center of the sphere as an offset from another
+    // sphere
+    vec3 oc = ro - sph.xyz;
+    float b = 2.0 * dot(oc, rd);
+    float c = dot(oc, oc) - sph.w * sph.w;
     float h = b * b - 4.0 * c;
     
     if( h < 0.0)
@@ -37,6 +45,19 @@ float sphere(in vec3 ro, in vec3 rd)
     return (-b - sqrt(h)) / 2.0;
 }
 
+vec3 sphere_normal(in vec3 pos, in vec4 sphere)
+{
+    return normalize(pos - sphere.xyz) / sphere.w;
+}
+
+vec3 plane_normal(in vec3 pos)
+{
+    return vec3(0.0, 1.0, 0.0) * pos;
+}
+
+/*
+    plane()
+*/
 float plane(in vec3 ro, in vec3 rd)
 {
     // y = 0 for a plane, 
@@ -44,10 +65,17 @@ float plane(in vec3 ro, in vec3 rd)
     return -ro.y / rd.y;
 }
 
+
+// origin sphere 
+vec4 origin_sphere = vec4(0.0, 1.0, 0.0, 1.0);
+
+/*
+    intersect()
+*/
 float intersect(in vec3 ro, in vec3 rd, out float t_res)
 {
     float id = -1.0;
-    float tsphere = sphere(ro, rd);       // intersect with a sphere
+    float tsphere = sphere(ro, rd, origin_sphere);       // intersect with a sphere
     float tplane = plane(ro ,rd);        // intersect with a plane
 
     if(tsphere > 0.0)
@@ -65,8 +93,10 @@ float intersect(in vec3 ro, in vec3 rd, out float t_res)
 }
 
 
+
 void mainImage(out vec4 frag_color, in vec2 frag_coord)
 {
+    vec3 light = normalize(vec3(0.577));
     // pixel coords from 0 to 1
     vec2 uv = (2.0 * frag_coord - i_resolution.xy) / i_resolution.y;
 
@@ -78,20 +108,26 @@ void mainImage(out vec4 frag_color, in vec2 frag_coord)
     float t;
     float id = intersect(ro, rd, t);
 
+    // for lighting we need to calculate normals
+
+
     // default background is a gradient
     vec3 col = vec3(uv.x);
+    vec3 pos = ro + t * rd;
     //if(id > 0.0)
-    if(id > 0.5 && id < 1.5)
+    if(id > 0.5 && id < 1.5)        // we hit the sphere
     {
-        // if we hit something, draw white
-        col = vec3(1.0);
+        vec3 nor = sphere_normal(pos, origin_sphere);
+        float diffuse = clamp(dot(nor, light), 0.0, 1.0);
+        float ambient = 0.5 + 0.5 * nor.y;
+        col = vec3(1.12, 0.15, 0.25) * diffuse + ambient * vec3(0.2, 0.3, 0.4);
     }
-    else if(id > 1.5)
+    else if(id > 1.5)       // we hit the plane
     {
         // we hit the plane
-        col = vec3(1.0, 0.0, 0.0);
+        vec3 nor = plane_normal(pos);
+        col = vec3(0.2, 0.25, 0.13);
     }
-
 
     frag_color = vec4(col, 1.0);
 }

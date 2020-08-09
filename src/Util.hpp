@@ -12,7 +12,7 @@
 constexpr int DISP_W = 800;
 constexpr int DISP_H = 600;
 
-SDL_Window* create_window(void);
+SDL_Window* create_window(const char* window_title);
 void destroy_window(SDL_Window* window);
 
 #endif /*__UTIL_HPP*/

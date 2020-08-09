@@ -29,7 +29,7 @@ SDL_GLContext test_context;
 TEST_CASE("test_shader", "[classic]")
 {
     // SDL Context setup
-    test_window = create_window();      
+    test_window = create_window("test_shader");
     test_context = SDL_GL_CreateContext(test_window);
     glewExperimental = GL_TRUE;
     glewInit();

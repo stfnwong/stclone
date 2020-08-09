@@ -8,6 +8,7 @@ Orbit trap rendering of Julia Fractal (2D)
 #version 330 core 
 
 #define AA 2
+#define NUM_DERIVATIVE_ITERS 256
 
 
 // Uniforms
@@ -20,25 +21,20 @@ uniform vec2  i_resolution;
 uniform vec4  i_mouse;
 
 
-
-float dot2(in vec2 v)
-{
-    return dot(v, v);
-}
-
 /*
     render()
 */
 float calc_distance(in vec2 p, in float time)
 {
-    float zoom = pow(0.9, 25.0 * time);
-    vec2 c = vec2(-0.7, 0.18) - 0.45 * zoom * (1.0 - time * 0.5);
-    vec2 cen = vec2(0.265, 0.301) + zoom * 0.8 * cos(4.0 + 2.0 * time);
+    float l_time = 0.5 - 0.5 * cos(0.06 * time);
+    float zoom = pow(0.9, 5.0 * time);
+    vec2 c = vec2(-0.745, 0.186) - 0.35 * zoom * (1.0 - l_time * 0.5);
+    vec2 cen = vec2(0.2655, 0.301) + zoom * 0.4 * cos(2.0 + 2.0 * l_time);
     vec2 z = cen + (p - cen) * zoom;
 
     // implement full derivative (slower)
     vec2 dz = vec2(1.0, 0.0);
-    for(int i = 0; i < 128; ++i)
+    for(int i = 0; i < NUM_DERIVATIVE_ITERS; ++i)
     {
         dz = 2.0 * vec2(z.x * dz.x - z.y * dz.y, z.x * dz.y + z.y * dz.x);
         z = vec2(z.x * z.x - z.y * z.y, 2.0 * z.x * z.y) + c;
@@ -59,7 +55,7 @@ void mainImage(out vec4 frag_color, in vec2 frag_coord)
         for(int j = 0; j < AA; ++j)
         {
             vec2 of = -0.5 + vec2(float(i), float(j)) / float(AA);
-            scol += calc_distance(frag_coord + of, i_time);
+            scol += calc_distance(uv + of, i_time);
         }   
     }
     scol = scol / float(AA * AA);

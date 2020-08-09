@@ -103,7 +103,7 @@ int main(int argc, char* argv[])
     SDL_Window* window;
     SDL_GLContext gl_ctx;
 
-    window = create_window();
+    window = create_window(args.frag_shader_fname.c_str());
     gl_ctx = SDL_GL_CreateContext(window);
     glewExperimental = GL_TRUE;
     glewInit();

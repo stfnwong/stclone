@@ -66,7 +66,7 @@ int main(int argc, char* argv[])
 {
     Args args;
     const char* const short_args = "vhi:o:";
-    const option long_args[] = {};
+    const struct option long_args[] = {0};
     int argn = 0;
     int status;
 

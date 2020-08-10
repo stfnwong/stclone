@@ -79,6 +79,7 @@ program: $(PROGRAMS)
 
 clean:
 	rm -rfv *.o $(OBJ_DIR)/*.o 
+	rm -v $(BIN_DIR)/*
 
 print-%:
 	@echo $* = $($*)

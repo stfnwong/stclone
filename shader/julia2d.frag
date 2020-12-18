@@ -27,7 +27,7 @@ uniform vec4  i_mouse;
 float calc_distance(in vec2 p, in float time)
 {
     float l_time = 0.5 - 0.5 * cos(0.06 * time);
-    float zoom = pow(0.9, 5.0 * time);
+    float zoom = pow(0.9, 5.0 * time); // * cos(0.005 * i_time);
     vec2 c = vec2(-0.745, 0.186) - 0.35 * zoom * (1.0 - l_time * 0.5);
     vec2 cen = vec2(0.2655, 0.301) + zoom * 0.4 * cos(2.0 + 2.0 * l_time);
     vec2 z = cen + (p - cen) * zoom;
@@ -59,9 +59,7 @@ void mainImage(out vec4 frag_color, in vec2 frag_coord)
         }   
     }
     scol = scol / float(AA * AA);
-       
     vec3 vcol = pow(vec3(scol), vec3(0.9, 1.1, 1.4));
-    // TODO : probably need scaling above
 
     frag_color = vec4(vcol, 1.0);
 }

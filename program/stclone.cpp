@@ -63,7 +63,6 @@ void render(float time_now, float time_diff, const float* mouse)
     glUniform2f(uniforms.i_resolution, DISP_W, DISP_H);
     glUniform4fv(uniforms.i_mouse, 1, mouse);
     // frame count
-
     // channel uniform
     glUniform1i(uniforms.i_channel_0, channel_0_idx);
     glUniform1i(uniforms.i_channel_1, channel_0_idx);

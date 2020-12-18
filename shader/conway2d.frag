@@ -72,6 +72,7 @@ void mainImage( out vec4 O, in vec2 c )
     //    O = vec4(1.0);
     //}
     //else
+    if(i_time > 10.0)
     {
         float n =   N(-1,-1) + N(-1, 0) + N(-1, 1)
                   + N( 0,-1)            + N( 0, 1)
@@ -91,10 +92,10 @@ void mainImage( out vec4 O, in vec2 c )
         O = vec4(vec3(v), 1.0);
     }
     ////Generate some noise to get things going
-    //else
-    //{
-    //    O = vec4(snoise(c) > 0.8 ? 1.0 : 0.0);
-    //}
+    else
+    {
+        O = vec4(snoise(c) > 0.8 ? 1.0 : 0.0);
+    }
 }
 
 

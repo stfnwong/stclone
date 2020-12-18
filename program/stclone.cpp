@@ -25,6 +25,9 @@ struct ShaderUniforms
     GLuint i_time_delta;
     GLuint i_resolution;
     GLuint i_mouse;
+    GLuint i_frame;
+    GLuint i_channel_0;
+    GLuint i_channel_1;
 };
 
 /*
@@ -47,6 +50,9 @@ struct Args
 Shader the_shader;
 ShaderUniforms uniforms;
 
+int channel_0_idx = 0;      // TODO: in case I want to assign this later
+int channel_1_idx = 0;      // TODO: in case I want to assign this later
+
 /*
  * render()
  */
@@ -56,6 +62,11 @@ void render(float time_now, float time_diff, const float* mouse)
     glUniform1f(uniforms.i_time_delta, time_diff);
     glUniform2f(uniforms.i_resolution, DISP_W, DISP_H);
     glUniform4fv(uniforms.i_mouse, 1, mouse);
+    // frame count
+
+    // channel uniform
+    glUniform1i(uniforms.i_channel_0, channel_0_idx);
+    glUniform1i(uniforms.i_channel_1, channel_0_idx);
     glDrawArrays(GL_TRIANGLES, 0, 3);
     glDrawArrays(GL_TRIANGLES, 3, 3);
 }
@@ -160,6 +171,8 @@ int main(int argc, char* argv[])
     uniforms.i_time_delta = the_shader.getUniform("i_time_delta");
     uniforms.i_resolution = the_shader.getUniform("i_resolution");
     uniforms.i_mouse      = the_shader.getUniform("i_mouse");
+    uniforms.i_channel_0  = the_shader.getUniform("i_channel_0");
+    uniforms.i_channel_1  = the_shader.getUniform("i_channel_1");
 
     bool running = true;
     auto start = std::chrono::high_resolution_clock::now();

@@ -126,10 +126,10 @@ void render(float time_now, float time_diff, const float* mouse)
     // bind the texture to tex unit 0
     //i_channel_0.bind(0);
     //glBindTexture(uniforms.i_channel_0, 0);
-    glActiveTexture(GL_TEXTURE0 + 0);
-    glBindTexture(GL_TEXTURE_2D, i_channel_0.tex_id );     // TODO: 
-    //glBindTexture(GL_TEXTURE_2D, uniforms.i_channel_0);     // TODO: 
-    glUniform1i(uniforms.i_channel_0, 0);
+    //glActiveTexture(GL_TEXTURE0 + 0);
+    //glBindTexture(GL_TEXTURE_2D, i_channel_0.tex_id );     // TODO: 
+    ////glBindTexture(GL_TEXTURE_2D, uniforms.i_channel_0);     // TODO: 
+    //glUniform1i(uniforms.i_channel_0, 0);
 
     glDrawArrays(GL_TRIANGLES, 0, 3);
 
@@ -230,32 +230,32 @@ int main(int argc, char* argv[])
     the_shader.use();
 
     // Frame buffer 
-    GLuint framebuffer = 0;
-    glGenFramebuffers(1, &framebuffer);
-    glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
+    //GLuint framebuffer = 0;
+    //glGenFramebuffers(1, &framebuffer);
+    //glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
 
-    // Create a texture to render to
-    i_channel_0.create(w, h, default_texture_data);
-    // TODO : clean up
-    // another texture to render to
-    GLuint render_texture;
-    glGenTextures(1, &render_texture);
-    glBindTexture(GL_TEXTURE_2D, render_texture);
-    // give an empty image as the texture
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 512, 512, 0, GL_RGB, GL_UNSIGNED_BYTE, 0);
+    //// Create a texture to render to
+    //i_channel_0.create(w, h, default_texture_data);
+    //// TODO : clean up
+    //// another texture to render to
+    //GLuint render_texture;
+    //glGenTextures(1, &render_texture);
+    //glBindTexture(GL_TEXTURE_2D, render_texture);
+    //// give an empty image as the texture
+    //glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 512, 512, 0, GL_RGB, GL_UNSIGNED_BYTE, 0);
 
-    // depth buffer
-    GLuint depthbuffer;
-    glGenRenderbuffers(1, &depthbuffer);
-    glBindRenderbuffer(GL_RENDERBUFFER, depthbuffer);
-    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, 512, 512);
-    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depthbuffer);
+    //// depth buffer
+    //GLuint depthbuffer;
+    //glGenRenderbuffers(1, &depthbuffer);
+    //glBindRenderbuffer(GL_RENDERBUFFER, depthbuffer);
+    //glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, 512, 512);
+    //glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depthbuffer);
 
-    // config framebuffer
-    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, i_channel_0.tex_id, 0);
-    // set the list of draw buffers
-    GLenum draw_buffers[1] = {GL_COLOR_ATTACHMENT0};
-    glDrawBuffers(1, draw_buffers);
+    //// config framebuffer
+    //glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, i_channel_0.tex_id, 0);
+    //// set the list of draw buffers
+    //GLenum draw_buffers[1] = {GL_COLOR_ATTACHMENT0};
+    //glDrawBuffers(1, draw_buffers);
 
     // connect shader inputs and outputs
     GLint pos;
@@ -268,7 +268,7 @@ int main(int argc, char* argv[])
     glVertexAttribPointer(pos, 2, GL_FLOAT, GL_FALSE, 0, 0);
     glEnableVertexAttribArray(pos);
 
-    glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
+    //glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
 
     uniforms.i_time       = the_shader.getUniform("i_time");
     uniforms.i_time_delta = the_shader.getUniform("i_time_delta");

@@ -1,5 +1,5 @@
 /*
- CONWAY 2d as fragment shader
+ Cout_colNWAY 2d as fragment shader
 
 */
 
@@ -36,16 +36,19 @@
 #define brushSize 20.0
 
 #define T(i,j) texture(i_channel_0, (uv + vec2(i,j)*vec2(1.0/R) )).r 
-#define N(i,j)  + float( T(i,j) > 0.)
+#define N(i,j) float( T(i,j) > 0.0)
 
 in vec2 position_out;
-out vec4 out_color;
+//out vec4 out_color;
+layout (location = 0) out vec4 out_color;
  
 uniform float i_time;
 uniform float i_time_delta;
 uniform vec2  i_resolution;
 uniform vec4  i_mouse;
 uniform sampler2D i_channel_0;
+//uniform sampler2D texture;
+//layout (location=0) uniform sampler2D i_channel_0;
 
 uniform int i_frame;
 
@@ -56,23 +59,22 @@ float snoise(in vec2 co){
 }
 
 
-void mainImage( out vec4 O, in vec2 c )
+void mainImage( out vec4 out_col, in vec2 coord )
 {
 	vec2 R = i_resolution.xy;
     
     // retrieve the texture coordinate
-    vec2 uv = c.xy / R;
+    vec2 uv = coord.xy / R;
     
     // get the current pixel
     float v = texture(i_channel_0, uv).r;
     
-    // check to seee if we are at the start of the timeline or if the R key is pressed.
-    //if(distance(iMouse.xy, c) < brushSize && iMouse.z > .0)
-    //{
-    //    O = vec4(1.0);
-    //}
-    //else
-    if(i_time > 10.0)
+    // start with noise
+    if(i_time < 2.0)
+    {
+        out_col = vec4(snoise(coord) > 0.8 ? 1.0 : 0.0);
+    }
+    else
     {
         float n =   N(-1,-1) + N(-1, 0) + N(-1, 1)
                   + N( 0,-1)            + N( 0, 1)
@@ -89,12 +91,7 @@ void mainImage( out vec4 O, in vec2 c )
         v -= float(v > 0.4)*0.05;
 
         // write out the pixel
-        O = vec4(vec3(v), 1.0);
-    }
-    ////Generate some noise to get things going
-    else
-    {
-        O = vec4(snoise(c) > 0.8 ? 1.0 : 0.0);
+        out_col = vec4(vec3(v), 1.0);
     }
 }
 

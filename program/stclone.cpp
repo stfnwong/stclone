@@ -97,7 +97,9 @@ int main(int argc, char* argv[])
     }
 
     if(argc > argn+1)
-        args.frag_shader_fname = std::string(argv[argc-1]);
+        args.frag_shader_fname = std::string(argv[argn+1]);
+    if(argc > argn+2)
+        args.vert_shader_fname = std::string(argv[argn+2]);
 
     // Set up SDL 
     SDL_Window* window;

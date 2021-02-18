@@ -49,7 +49,7 @@ int main(int argc, char* argv[])
     int status;
     // hardcode test shader for now 
     std::string vert_shader_fname = "shader/default.vert";
-    std::string frag_shader_fname = "shader/terrain_march.frag";
+    std::string frag_shader_fname = "shader/sphere_map.frag";
 
     // Set up SDL 
     SDL_Window* window;

@@ -10,11 +10,15 @@
 // GL stuff
 #include <GL/glew.h>
 #include <SDL2/SDL.h>
+// input args
+#include <getopt.h>
 
 #include "Shader.hpp"
 #include "Util.hpp"
 
-
+/*
+ * Shader uniforms 
+ */
 struct ShaderUniforms
 {
     GLuint i_time;
@@ -23,9 +27,23 @@ struct ShaderUniforms
     GLuint i_mouse;
 };
 
-const std::string default_vert_shader_fname = "shader/default.vert";
-const std::string default_frag_shader_fname = "shader/terrain_march.frag";
+/*
+ * Command line args
+ */
+struct Args
+{
+    std::string vert_shader_fname;
+    std::string frag_shader_fname;
+    bool verbose;
 
+    Args() : 
+        vert_shader_fname("shader/default.vert"), 
+        frag_shader_fname("shader/default.frag"),
+        verbose(false) 
+    {} 
+};
+
+// Shader
 Shader the_shader;
 ShaderUniforms uniforms;
 
@@ -46,16 +64,46 @@ void render(float time_now, float time_diff, const float* mouse)
 // ======== ENTRY POINT  ======== // 
 int main(int argc, char* argv[])
 {
+    Args args;
+    const char* const short_args = "vhi:o:";
+    const struct option long_args[] = {0};
+    int argn = 0;
     int status;
-    // hardcode test shader for now 
-    std::string vert_shader_fname = "shader/default.vert";
-    std::string frag_shader_fname = "shader/sphere_map.frag";
+
+    // get args 
+    while(1)
+    {
+        const auto opt = getopt_long(argc, argv, short_args, long_args, nullptr);
+        if(opt == -1)
+            break;
+
+        switch(opt)
+        {
+            // NOTE: does nothing as of now
+            case 'v':
+                args.verbose = true;
+                break;
+
+            case 'h':
+                std::cout << "TODO : write help text and print here" << std::endl;
+                break;
+
+            default:
+                std::cerr << "Unknown option " << std::string(optarg) << "(arg " << argn << ")" << std::endl;
+                exit(-1);
+                break;
+        }
+        argn++;
+    }
+
+    if(argc > argn+1)
+        args.frag_shader_fname = std::string(argv[argc-1]);
 
     // Set up SDL 
     SDL_Window* window;
     SDL_GLContext gl_ctx;
 
-    window = create_window();
+    window = create_window(args.frag_shader_fname.c_str());
     gl_ctx = SDL_GL_CreateContext(window);
     glewExperimental = GL_TRUE;
     glewInit();
@@ -80,14 +128,14 @@ int main(int argc, char* argv[])
     glBufferData(GL_ARRAY_BUFFER, sizeof(triangles), triangles, GL_STATIC_DRAW);
 
     // create shader 
-    std::cout << "Using vertex shader [" << vert_shader_fname << "]" << std::endl;
-    std::cout << "Using fragment shader [" << frag_shader_fname << "]" << std::endl;
+    std::cout << "Using vertex shader [" << args.vert_shader_fname << "]" << std::endl;
+    std::cout << "Using fragment shader [" << args.frag_shader_fname << "]" << std::endl;
     
-    status = the_shader.load(vert_shader_fname, frag_shader_fname);
+    status = the_shader.load(args.vert_shader_fname, args.frag_shader_fname);
     if(status < 0 || !the_shader.ok())
     {
         std::cerr << "[" << __func__ << "] failed to load shader files [" 
-            << vert_shader_fname << "] and [" << frag_shader_fname 
+            << args.vert_shader_fname << "] and [" << args.frag_shader_fname 
             << "]" << std::endl;
 
         return -1;

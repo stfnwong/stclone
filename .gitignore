@@ -3,3 +3,5 @@
 *.swp
 # Ignore object files 
 *.o
+# Ignore tags 
+tags

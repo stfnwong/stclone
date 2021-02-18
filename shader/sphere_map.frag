@@ -24,10 +24,31 @@ mat2 rotate(float a)
     return mat2(ca, sa, -sa, ca);
 }
 
+vec3 particles(vec3 p, float t)
+{
+    float s = 10;
+    float xy_rot_offset = 0.777;
+    //float xy_rot_offset = 0.677;
+
+    for(int i = 0; i < 8; ++i)
+    {
+        p.xz *= rotate(t);
+        p.xy *= rotate(t * xy_rot_offset);
+        p = abs(p);
+        p -= s;
+        s *= 0.7;;       // sphere pos gets gradually smaller 
+    }
+
+    return p;
+}
 
 float map(vec3 p)
 {
-    return length(p) - 1;
+    vec3 p2 = particles(p, i_time * 0.21);
+    float d1 = length(p2) - 1.0;
+
+    return d1;
+    //return length(p) - 1;
 }
 
 
@@ -41,7 +62,7 @@ void mainImage(out vec4 frag_color, in vec2 frag_coord)
     //vec2 uv = vec2(frag_coord
 
     // draw a sphere 
-    vec3 s = vec3(0, 0, -10);
+    vec3 s = vec3(0, 0, -60);
     vec3 r = normalize(vec3(-uv, 1));
 
     vec3 p = s;

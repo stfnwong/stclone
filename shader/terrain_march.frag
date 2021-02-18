@@ -116,7 +116,7 @@ float terrain(vec3 cam_pos, vec3 mdir, float depth, float e, float time)
         vec3 ptgr = (cam_pos + depth * mdir) + vec3(0, 0, 3);
         vec2 o = vec2(-time, time);
         
-        float h  = 1.5 * noise((ptgr.xy + o) * 0.1) / 2.0;
+        float h  = 10.5 * noise((ptgr.xy + o) * 0.1) / 2.0;
         float b  = h + noise((ptgr.xy + o) * 0.7) / 5.0;
         float w  = clamp(0.5 + 0.5 * (b - h) / 0.3, 0.0, 1.0);
         float sm = mix(b, h, w) - 0.3 * w * (1.0 - w);
@@ -155,7 +155,7 @@ void mainImage(out vec4 frag_color, in vec2 frag_coord)
     // TODO : dramatically simplify this expression
 	float dist = terrain(cam_pos, (
 		mat4(vec4(s, 0.0),vec4(u, 0.0),vec4(-f, 0.0),vec4(0.0, 0.0, 0.0, 1.0))
-		*vec4(normalize(vec3(f_coord - scr / 2.0, -scr.y / tan(radians(73.0+FOV) / 2.0))), 0.0)
+		*vec4(normalize(vec3(f_coord - scr / 2.0, -scr.y / tan(radians(53.0+FOV) / 2.0))), 0.0)
 	).xyz, 1.0, 100.0, i_time*3.0);
 
     if(dist > 100.0)
@@ -165,7 +165,8 @@ void mainImage(out vec4 frag_color, in vec2 frag_coord)
 
     //vec4 ret = vec4(vec4(0.1, 0.1, 0.1, 1.0) - vec4(0.0, 0.0, 0.0, 0.0, smoothstep(0.0, FD, dist))) / 1.0 + (f_coord.y / 3.0);
     vec4 ret = vec4(vec4(0.1,0.1,0.1,1)-vec4(0.0,0.0,0.0,smoothstep(0.0, FD, dist)))/1.0+(f_coord.y/3.0);
-    frag_color = vec4(cos(i_time), 0.9 * sin(i_time), 0.9, 1.0) - vec4(vec3(0.2) + ret.rgb * 3.0 * ret.a, 0.0);
+    frag_color = vec4(1.0, 0.21, 0.9, 1.0) - vec4(vec3(0.2) + ret.rgb * 3.0 * ret.a, 0.0);
+    //frag_color = vec4(cos(i_time), 0.9 * sin(i_time), 0.9, 1.0) - vec4(vec3(0.2) + ret.rgb * 3.0 * ret.a, 0.0);
 
 
     // normalize pixel co-ords (from 0 to 1)

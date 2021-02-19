@@ -97,32 +97,36 @@ int Shader::init(const std::string& vert_fname, const std::string& frag_fname)
     const GLchar* fs_code = fshader_source.c_str(); 
 
     // vertex shader 
-    std::cout << "[" << __func__ << "] compiling shader [" << vert_fname << "]" << std::endl;
+    std::cout << "[" << __func__ << "] compiling shader [" << vert_fname << "].... ";
     this->shader[0] = glCreateShader(GL_VERTEX_SHADER);   
     glShaderSource(this->shader[0], 1, &vs_code, NULL);
     glCompileShader(this->shader[0]);
     glGetShaderiv(this->shader[0], GL_COMPILE_STATUS, &success);
     if(!success)
     {
+        std::cout << " FAILED" << std::endl;
         glGetShaderInfoLog(this->shader[0], 512, NULL, info_log);
         std::cout << "[" << __func__ << "] shader compilation log '" 
             << info_log << "' " << std::endl;
         return -1;
     }
+    std::cout << " SUCCESS" << std::endl;
 
     // fragment shader
-    std::cout << "[" << __func__ << "] compiling shader [" << frag_fname << "]" << std::endl;
+    std::cout << "[" << __func__ << "] compiling shader [" << frag_fname << "].... ";
     this->shader[1] = glCreateShader(GL_FRAGMENT_SHADER);
     glShaderSource(this->shader[1], 1, &fs_code, NULL);
     glCompileShader(this->shader[1]);
     glGetShaderiv(this->shader[1], GL_COMPILE_STATUS, &success);
     if(!success)
     {
+        std::cout << " FAILED" << std::endl;
         glGetShaderInfoLog(this->shader[1], 512, NULL, info_log);
         std::cout << "[" << __func__ << "] shader compilation log '" 
             << info_log << "' " << std::endl;
         return -1;
     }
+    std::cout << " SUCCESS" << std::endl;
 
     // Create the program
     this->program = glCreateProgram();

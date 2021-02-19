@@ -24,19 +24,40 @@ mat2 rotate(float a)
     return mat2(ca, sa, -sa, ca);
 }
 
+// IQ polynomial smooth min 
+float smooth_min(float a, float b, float h)
+{
+    float k = clamp((a - b) / h * 0.5 + 0.5, 0.0, 1.0);
+    return mix(a, b, k) - k * h * (1-k);
+}
+
+vec3 smooth_min(vec3 a, vec3 b, float h)
+{
+    vec3 k = clamp((a - b) / h * 0.5 + 0.5, 0.0, 1.0);
+    return mix(a, b, k) - k * h * (1-k);
+}
+
+float sphere(vec3 p, float s)
+{
+    return length(p) - s;
+}
+
 vec3 particles(vec3 p, float t)
 {
-    float s = 10;
-    float xy_rot_offset = 0.777;
-    //float xy_rot_offset = 0.677;
+    int num_iters = 4;      // TODO: GLSL compiler optimizes away to const right?
+    float s = 8;
+    //float xy_rot_offset = 0.24 * cos(i_time); //0.777;
+    float xy_rot_offset = 0.677;
 
-    for(int i = 0; i < 8; ++i)
+    for(int i = 0; i < num_iters; ++i)
     {
-        p.xz *= rotate(t);
-        p.xy *= rotate(t * xy_rot_offset);
-        p = abs(p);
+        float ts = t + i;
+        p.xz *= rotate(ts);
+        p.xy *= rotate(ts * xy_rot_offset);
+        //p = abs(p);
+        p = smooth_min(p, -p, -1.5);
         p -= s;
-        s *= 0.7;;       // sphere pos gets gradually smaller 
+        s *= 0.7;;       // pos gets gradually smaller 
     }
 
     return p;
@@ -44,13 +65,10 @@ vec3 particles(vec3 p, float t)
 
 float map(vec3 p)
 {
-    vec3 p2 = particles(p, i_time * 0.21);
-    float d1 = length(p2) - 1.0;
-
-    return d1;
-    //return length(p) - 1;
+    float time_scale = 0.12;
+    vec3 p2 = particles(p, i_time * time_scale);
+    return sphere(p2, 2.0);
 }
-
 
 
 void mainImage(out vec4 frag_color, in vec2 frag_coord)
@@ -75,8 +93,9 @@ void mainImage(out vec4 frag_color, in vec2 frag_coord)
         p += r * d;         
     }
 
+    float col_scale = 1.56;
     vec3 col = vec3(0);
-    col += pow(1-i / 101.0, 8);
+    col += pow(1-i / 101.0, 6) * col_scale;
 
     frag_color = vec4(col, 1.0);
 }

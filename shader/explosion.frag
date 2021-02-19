@@ -69,7 +69,8 @@ float explosion(vec3 p, float t, float offset)
     float ts = t * speed + offset;
     
     vec3 p1 = particles(p, ts * 0.1, ts);
-    vec3 p2 = particles(p + vec3(3, 2, 1), t * 0.13, ts);
+    vec3 p2 = particles(p + vec3(3, 2, 1), ts * 0.13, ts);
+    //vec3 p2 = particles(p + vec3(3, 2, 1), t * 0.13, ts);
 
     float fade = 1.0 - pow(fract(ts), 10);
 
@@ -111,7 +112,7 @@ void mainImage(out vec4 frag_color, in vec2 frag_coord)
     vec2 uv = frag_coord / i_resolution.xy;
 
     // draw a sphere 
-    vec3 s = vec3(0, 0, -30);
+    vec3 s = vec3(0, 0, -20);
     vec3 r = normalize(vec3(-uv, 1));
     // change camera pos   
     cam_rotate(s, 0.3);

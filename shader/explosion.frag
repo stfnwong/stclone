@@ -55,7 +55,7 @@ vec3 particles(vec3 p, float t, float texp)
         float ts = t + i;
         p.xz *= rotate(ts);
         p.xy *= rotate(ts * xy_rot_offset);
-        p = smooth_min(p, -p, -1.0);
+        p = smooth_min(p, -p, -1.24);
         p -= s;
         s *= 0.7;       // pos gets gradually smaller 
     }
@@ -68,51 +68,29 @@ float explosion(vec3 p, float t, float offset)
     float speed = 0.15;
     float ts = t * speed + offset;
     
-    vec3 p1 = particles(p, t * 0.1, ts);
-    //vec3 p2 = particles(p + vec3(3, 2, 1), t * 0.13);
+    vec3 p1 = particles(p, ts * 0.1, ts);
+    vec3 p2 = particles(p + vec3(3, 2, 1), t * 0.13, ts);
 
     float fade = 1.0 - pow(fract(ts), 10);
 
     float d1 = length(p1) - 1.5 * fade;
-    //float d2 = length(p2) - 1.4 * fade;
+    float d2 = length(p2) - 1.4 * fade;
 
-    //return smooth_min(d1, d2, -1.0);
-    return d1;
+    return smooth_min(d1, d2, -1.0);
 }
 
-/*
-    Generate central collection of particles 
-*/
-//float map(vec3 p)
-//{
-//    float ts1 = 0.12;
-//    float ts2 = -0.32;
-//    vec3 p1_offset = vec3(1, 1, 0);
-//    vec3 p2_offset = vec3(3, 0, 0);
-//
-//    // each set of points here is actually part of a new "collection" of
-//    // particles
-//    vec3 p1 = particles(p + p1_offset, i_time * ts1);
-//    vec3 p2 = particles(p + p2_offset, i_time * ts2);
-//
-//    // merge the particles together 
-//    float d1 = length(p1) - 2.0;
-//    float d2 = length(p2) - 2.0;
-//    float merge = smooth_min(d1, d2, -1.0);
-//
-//    return merge;
-//}
 
 float at1 = 0;
 float at2 = 0;
 
 float map(vec3 p)
 {
-    float m1 = explosion(p, i_time, 0.0);
-    float m2 = explosion(p, i_time, 0.5);
+    // adjust param 2 for start timing
+    float m1 = explosion(p, i_time + 1.1, 2.2);
+    float m2 = explosion(p, i_time, 0.01);
 
-    at1 += 0.06 / (0.12 + abs(m1));
-    at2 += 0.05 / (0.1 + abs(m2));
+    at1 += 0.06 / (0.10 + abs(m1));
+    at2 += 0.05 / (0.10 + abs(m2));
 
     return smooth_min(m1, m2, -1);
 }
@@ -133,7 +111,7 @@ void mainImage(out vec4 frag_color, in vec2 frag_coord)
     vec2 uv = frag_coord / i_resolution.xy;
 
     // draw a sphere 
-    vec3 s = vec3(0, 0, -60);
+    vec3 s = vec3(0, 0, -30);
     vec3 r = normalize(vec3(-uv, 1));
     // change camera pos   
     cam_rotate(s, 0.3);
@@ -145,7 +123,7 @@ void mainImage(out vec4 frag_color, in vec2 frag_coord)
     vec3 col = vec3(0);
     float at = 0;
 
-    for(i = 0; i < 96; ++i)
+    for(i = 0; i < 48; ++i)
     {
         float m = map(p);      
         float d = abs(m);
@@ -155,12 +133,8 @@ void mainImage(out vec4 frag_color, in vec2 frag_coord)
 
         p += r * d;         
         
-        col += pow(at1 * 0.02, 3.1) * vec3(0.6, 0.2, 0.15);
-        col += pow(at2 * 0.02, 2.8) * vec3(0.3, 0.33, 0.77);
-        
-        // update color
-        //float col_param = at1 * 0.008;
-        //col += pow(min(col_param, col_param * 0.5 * sin(0.5 * i_time) + 0.67), 1.4) * vec3(0.6, 0.1, 0.2); 
+        col += pow(at1 * 0.02, 2.1) * vec3(0.6, 0.2, 0.15);
+        col += pow(at2 * 0.02, 1.8) * vec3(0.3, 0.33, 0.77);
     }
 
     frag_color = vec4(col, 1.0);

@@ -54,7 +54,6 @@ vec3 particles(vec3 p, float t)
         float ts = t + i;
         p.xz *= rotate(ts);
         p.xy *= rotate(ts * xy_rot_offset);
-        //p = abs(p);
         p = smooth_min(p, -p, -1.5);
         p -= s;
         s *= 0.7;;       // pos gets gradually smaller 
@@ -63,11 +62,27 @@ vec3 particles(vec3 p, float t)
     return p;
 }
 
+/*
+    Generate central collection of particles 
+*/
 float map(vec3 p)
 {
-    float time_scale = 0.12;
-    vec3 p2 = particles(p, i_time * time_scale);
-    return sphere(p2, 2.0);
+    float ts1 = 0.12;
+    float ts2 = 0.92;
+    vec3 p1_offset = vec3(0);
+    vec3 p2_offset = vec3(3, 0, 0);
+
+    // each set of points here is actually part of a new "collection" of
+    // particles
+    vec3 p1 = particles(p + p1_offset, i_time * ts1);
+    vec3 p2 = particles(p + p2_offset, i_time * ts2);
+
+    // merge the particles together 
+    float d1 = length(p1) - 2.0;
+    float d2 = length(p2) - 2.0;
+    float merge = smooth_min(d1, d2, -1.0);
+
+    return merge;
 }
 
 
@@ -85,17 +100,25 @@ void mainImage(out vec4 frag_color, in vec2 frag_coord)
 
     vec3 p = s;
     int i = 0;
-    for(i = 0; i < 128; ++i)
+    vec3 col = vec3(0);
+    float at = 0;
+
+    for(i = 0; i < 96; ++i)
     {
-        float d = abs(map(p));      // depth map?
-        if(d < 0.0001)
-            break;
+        float m = map(p);      // depth map?
+        float d = abs(m);
+        at += 0.07 / (0.2 + abs(m));
+        if(d < 0.001)
+            d = 0.1;        // bloom?
+
         p += r * d;         
+
+        // update color
+        col += at * 0.001 * vec3(0.2, 0.5, 1.0 * cos(0.25 * i_time));
     }
 
-    float col_scale = 1.56;
-    vec3 col = vec3(0);
-    col += pow(1-i / 101.0, 6) * col_scale;
+    float col_scale = 1.12;
+    col += pow(1-i / 101.0, 4) * col_scale;
 
     frag_color = vec4(col, 1.0);
 }

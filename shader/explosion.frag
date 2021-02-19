@@ -27,13 +27,13 @@ mat2 rotate(float a)
 float smooth_min(float a, float b, float h)
 {
     float k = clamp((a - b) / h * 0.5 + 0.5, 0.0, 1.0);
-    return mix(a, b, k) - k * h * (1-k);
+    return mix(a, b, k) - k * h * (1.0-k);
 }
 
 vec3 smooth_min(vec3 a, vec3 b, float h)
 {
     vec3 k = clamp((a - b) / h * 0.5 + 0.5, 0.0, 1.0);
-    return mix(a, b, k) - k * h * (1-k);
+    return mix(a, b, k) - k * h * (1.0-k);
 }
 
 float sphere(vec3 p, float s)
@@ -52,7 +52,7 @@ vec3 particles(vec3 p, float t, float texp)
 
     for(int i = 0; i < 4; ++i)
     {
-        float ts = t + i;
+        float ts = t + float(i);
         p.xz *= rotate(ts);
         p.xy *= rotate(ts * xy_rot_offset);
         p = smooth_min(p, -p, -1.24);
@@ -80,8 +80,8 @@ float explosion(vec3 p, float t, float offset)
 }
 
 
-float at1 = 0;
-float at2 = 0;
+float at1 = 0.0;
+float at2 = 0.0;
 
 float map(vec3 p)
 {
@@ -92,7 +92,7 @@ float map(vec3 p)
     at1 += 0.06 / (0.10 + abs(m1));
     at2 += 0.05 / (0.10 + abs(m2));
 
-    return smooth_min(m1, m2, -1);
+    return smooth_min(m1, m2, -1.0);
 }
 
 
@@ -120,8 +120,7 @@ void mainImage(out vec4 frag_color, in vec2 frag_coord)
     // set up renderer 
     vec3 p = s;
     int i = 0;
-    vec3 col = vec3(0);
-    float at = 0;
+    vec3 col = vec3(0.0);
 
     for(i = 0; i < 48; ++i)
     {

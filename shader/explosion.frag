@@ -68,9 +68,8 @@ float explosion(vec3 p, float t, float offset)
     float speed = 0.15;
     float ts = t * speed + offset;
     
-    vec3 p1 = particles(p, ts * 0.1, ts);
-    vec3 p2 = particles(p + vec3(3, 2, 1), ts * 0.13, ts);
-    //vec3 p2 = particles(p + vec3(3, 2, 1), t * 0.13, ts);
+    vec3 p1 = particles(p, ts * 0.00, ts);
+    vec3 p2 = particles(p + vec3(1, 2, 3), ts * 0.13, ts);
 
     float fade = 1.0 - pow(fract(ts), 10);
 
@@ -88,7 +87,7 @@ float map(vec3 p)
 {
     // adjust param 2 for start timing
     float m1 = explosion(p, i_time + 1.1, 2.2);
-    float m2 = explosion(p, i_time, 0.01);
+    float m2 = explosion(p, i_time, 0.00);
 
     at1 += 0.06 / (0.10 + abs(m1));
     at2 += 0.05 / (0.10 + abs(m2));

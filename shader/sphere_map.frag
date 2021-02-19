@@ -45,9 +45,10 @@ float sphere(vec3 p, float s)
 vec3 particles(vec3 p, float t)
 {
     int num_iters = 4;      // TODO: GLSL compiler optimizes away to const right?
-    float s = 8;
+    //float s = - 2 + exp(fract(i_time * 0.5) * 0.1) * 4.0;
+    float s = 6.0 + sin(i_time * 0.25) * 4.0;
     //float xy_rot_offset = 0.24 * cos(i_time); //0.777;
-    float xy_rot_offset = 0.677;
+    float xy_rot_offset = 0.6;
 
     for(int i = 0; i < num_iters; ++i)
     {
@@ -68,7 +69,7 @@ vec3 particles(vec3 p, float t)
 float map(vec3 p)
 {
     float ts1 = 0.12;
-    float ts2 = 0.92;
+    float ts2 = -0.32;
     vec3 p1_offset = vec3(0);
     vec3 p2_offset = vec3(3, 0, 0);
 
@@ -86,18 +87,29 @@ float map(vec3 p)
 }
 
 
+void cam_rotate(inout vec3 p, float rate)
+{
+    float t = i_time * rate;
+    p.xz *= rotate(t);
+    p.xy *= rotate(t * 1.2);
+}
+
+
 void mainImage(out vec4 frag_color, in vec2 frag_coord)
 {
     // normalize pixel co-ords (from 0 to 1)
     float ar = i_resolution.x / i_resolution.y;
     vec2 uv = frag_coord / i_resolution.xy;
 
-    //vec2 uv = vec2(frag_coord
 
     // draw a sphere 
     vec3 s = vec3(0, 0, -60);
     vec3 r = normalize(vec3(-uv, 1));
+    // change camera pos   
+    cam_rotate(s, 0.3);
+    cam_rotate(r, 0.3);
 
+    // set up renderer 
     vec3 p = s;
     int i = 0;
     vec3 col = vec3(0);
@@ -107,18 +119,21 @@ void mainImage(out vec4 frag_color, in vec2 frag_coord)
     {
         float m = map(p);      // depth map?
         float d = abs(m);
-        at += 0.07 / (0.2 + abs(m));
+        at += 0.07 / (0.1 + abs(m));
         if(d < 0.001)
             d = 0.1;        // bloom?
 
         p += r * d;         
-
+        
         // update color
-        col += at * 0.001 * vec3(0.2, 0.5, 1.0 * cos(0.25 * i_time));
+        float col_param = at * 0.008;
+        col += pow(min(col_param, col_param * sin(0.5 * i_time) + 0.05), 1.4) * vec3(0.1, 0.5, 0.85); 
+        //col += pow(at * 0.004, 1.4 * sin(0.25 * i_time)) * vec3(0.1, 0.5, 0.85); 
+        //col += pow(at * 0.012, 2) * vec3(0.1, 0.5, 1.0 * cos(0.25 * i_time) + 0.25);
     }
 
     float col_scale = 1.12;
-    col += pow(1-i / 101.0, 4) * col_scale;
+    //col += pow(1-i / 101.0, 4) * col_scale;
 
     frag_color = vec4(col, 1.0);
 }
@@ -127,5 +142,4 @@ void mainImage(out vec4 frag_color, in vec2 frag_coord)
 void main(void)
 {
     mainImage(out_color, position_out * i_resolution.xy);
-    //mainImage(out_color, (0.5 + 0.5 * position_out) * i_resolution.xy);
 }

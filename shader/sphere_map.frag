@@ -42,6 +42,10 @@ float sphere(vec3 p, float s)
     return length(p) - s;
 }
 
+/*
+    particles()
+    TODO: how many iters can I do before I get framerate drops?
+*/
 vec3 particles(vec3 p, float t)
 {
     int num_iters = 4;      // TODO: GLSL compiler optimizes away to const right?
@@ -70,7 +74,7 @@ float map(vec3 p)
 {
     float ts1 = 0.12;
     float ts2 = -0.32;
-    vec3 p1_offset = vec3(0);
+    vec3 p1_offset = vec3(1, 1, 0);
     vec3 p2_offset = vec3(3, 0, 0);
 
     // each set of points here is actually part of a new "collection" of
@@ -120,6 +124,7 @@ void mainImage(out vec4 frag_color, in vec2 frag_coord)
         float m = map(p);      // depth map?
         float d = abs(m);
         at += 0.07 / (0.1 + abs(m));
+
         if(d < 0.001)
             d = 0.1;        // bloom?
 
@@ -127,13 +132,11 @@ void mainImage(out vec4 frag_color, in vec2 frag_coord)
         
         // update color
         float col_param = at * 0.008;
-        col += pow(min(col_param, col_param * sin(0.5 * i_time) + 0.05), 1.4) * vec3(0.1, 0.5, 0.85); 
+        col += pow(min(col_param, col_param * 0.5 * sin(0.5 * i_time) + 0.67), 1.6) * vec3(0.1, 0.3, 0.7); 
+
         //col += pow(at * 0.004, 1.4 * sin(0.25 * i_time)) * vec3(0.1, 0.5, 0.85); 
         //col += pow(at * 0.012, 2) * vec3(0.1, 0.5, 1.0 * cos(0.25 * i_time) + 0.25);
     }
-
-    float col_scale = 1.12;
-    //col += pow(1-i / 101.0, 4) * col_scale;
 
     frag_color = vec4(col, 1.0);
 }

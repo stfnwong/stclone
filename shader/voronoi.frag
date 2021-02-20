@@ -58,7 +58,7 @@ void mainImage(out vec4 frag_color, in vec2 frag_coord)
         min_dist = min(d, min_dist);
     }
 
-    // drat the distance field
+    // draw the distance field
     col += min_dist * vec3(0.91, 0.84, 0.65);
     // show isolines 
     //col -= step(0.7, abs(sin(50.0 * min_dist))) * 0.3;

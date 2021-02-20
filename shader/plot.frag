@@ -39,8 +39,11 @@ void mainImage(out vec4 frag_color, in vec2 frag_coord)
     
     // function to plot
     //float y = st.x;
-    float y = pow(st.x, 2.4 * (sin(i_time) + 1.0));
+    //float y = pow(st.x, 2.4 * (sin(i_time) + 1.0));
     //float y = 0.2 * exp(0.25 * sin(i_time) * st.x);
+    //float y = step(0.5, st.x);
+    //float y = smoothstep(0.1, 0.9, st.x);
+    float y = smoothstep(0.1, 0.8 * (0.5 * sin(i_time) + 0.5) + 0.1, st.x);
 
     // color the plot 
     vec3 col = vec3(y);

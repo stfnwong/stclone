@@ -33,25 +33,24 @@ float plot_smooth(vec2 st, float pct)
            smoothstep(pct, pct + 0.02, st.y);
 }
 
-
 void mainImage(out vec4 frag_color, in vec2 frag_coord)
 {
     vec2 st = gl_FragCoord.xy / i_resolution;
     
     // function to plot
-    float y = st.x;
+    //float y = st.x;
+    float y = pow(st.x, 2.4 * (sin(i_time) + 1.0));
+    //float y = 0.2 * exp(0.25 * sin(i_time) * st.x);
 
     // color the plot 
     vec3 col = vec3(y);
     // plot a line
-    float pct = plot(st);
+    float pct = plot_smooth(st, y);
     col = (1.0 - pct) * col;            // colorize gradient
     col += pct * vec3(0.0, 0.0, 1.0);
-    //col = (1.0 - pct) * col + pct * vec3(0.0, 0.0, 1.0);
 
     frag_color = vec4(col, 1.0);
 }
-
 
 void main(void)
 {

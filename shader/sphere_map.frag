@@ -67,53 +67,30 @@ vec3 particles(vec3 p, float t)
     return p;
 }
 
-float exploding_particles(vec3 p, float t, float offset)
-{
-    float ts = t * 0.15 + offset;
-    
-    vec3 p1 = particles(p, t * 0.1);
-    //vec3 p2 = particles(p + vec3(3, 2, 1), t * 0.13);
-
-    float fade = 1.0 - pow(fract(ts), 9);
-
-    float d1 = length(p1) - 1.5 * fade;
-    //float d2 = length(p2) - 1.4 * fade;
-
-    //return smooth_min(d1, d2, -1.0);
-    return d1;
-}
 
 /*
     Generate central collection of particles 
 */
-//float map(vec3 p)
-//{
-//    float ts1 = 0.12;
-//    float ts2 = -0.32;
-//    vec3 p1_offset = vec3(1, 1, 0);
-//    vec3 p2_offset = vec3(3, 0, 0);
-//
-//    // each set of points here is actually part of a new "collection" of
-//    // particles
-//    vec3 p1 = particles(p + p1_offset, i_time * ts1);
-//    vec3 p2 = particles(p + p2_offset, i_time * ts2);
-//
-//    // merge the particles together 
-//    float d1 = length(p1) - 2.0;
-//    float d2 = length(p2) - 2.0;
-//    float merge = smooth_min(d1, d2, -1.0);
-//
-//    return merge;
-//}
-
-
 float map(vec3 p)
 {
-    float m1 = exploding_particles(p, i_time, 0.0);
-    float m2 = exploding_particles(p, i_time, 0.5);
+    float ts1 = 0.12;
+    float ts2 = -0.32;
+    vec3 p1_offset = vec3(1, 1, 0);
+    vec3 p2_offset = vec3(3, 0, 0);
 
-    return smooth_min(m1, m2, -1);
+    // each set of points here is actually part of a new "collection" of
+    // particles
+    vec3 p1 = particles(p + p1_offset, i_time * ts1);
+    vec3 p2 = particles(p + p2_offset, i_time * ts2);
+
+    // merge the particles together 
+    float d1 = length(p1) - 2.0;
+    float d2 = length(p2) - 2.0;
+    float merge = smooth_min(d1, d2, -1.0);
+
+    return merge;
 }
+
 
 
 void cam_rotate(inout vec3 p, float rate)

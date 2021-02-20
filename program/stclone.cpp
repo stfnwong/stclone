@@ -171,6 +171,7 @@ int main(int argc, char* argv[])
         exit(status);
 
     bool running = true;
+    bool paused = false;
     auto start = std::chrono::high_resolution_clock::now();
     auto prev = start;
     float mouse[4];
@@ -210,6 +211,10 @@ int main(int argc, char* argv[])
                         case SDLK_r:
                             status = create_shader(args.vert_shader_fname, args.frag_shader_fname);
                             break;
+                            
+                        case SDLK_p:
+                            paused = !paused;
+                            break;
                     }
                     break;
 
@@ -219,14 +224,16 @@ int main(int argc, char* argv[])
             }
         }
 
-        auto now       = std::chrono::high_resolution_clock::now();
-        float diff     = std::chrono::duration_cast<std::chrono::duration<float>>(now - prev).count();
-        float now_time = std::chrono::duration_cast<std::chrono::duration<float>>(now - start).count();
+        if(!paused)
+        {
+            auto now       = std::chrono::high_resolution_clock::now();
+            float diff     = std::chrono::duration_cast<std::chrono::duration<float>>(now - prev).count();
+            float now_time = std::chrono::duration_cast<std::chrono::duration<float>>(now - start).count();
 
-        prev = now;
-
-        render(now_time, diff, mouse);
-        SDL_GL_SwapWindow(window);
+            prev = now;
+            render(now_time, diff, mouse);
+            SDL_GL_SwapWindow(window);
+        }
     }
 
     SDL_GL_DeleteContext(gl_ctx);

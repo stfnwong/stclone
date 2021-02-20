@@ -50,7 +50,7 @@ vec3 particles(vec3 p, float t)
 {
     int num_iters = 4;      // TODO: GLSL compiler optimizes away to const right?
     //float s = - 2 + exp(fract(i_time * 0.5) * 0.1) * 4.0;
-    float s = 6.0 + sin(i_time * 0.25) * 4.0;
+    float s = 8.0 + sin(i_time * 0.25) * 4.0;
     //float xy_rot_offset = 0.24 * cos(i_time); //0.777;
     float xy_rot_offset = 0.6;
 
@@ -59,7 +59,7 @@ vec3 particles(vec3 p, float t)
         float ts = t + i;
         p.xz *= rotate(ts);
         p.xy *= rotate(ts * xy_rot_offset);
-        p = smooth_min(p, -p, -1.5);
+        p = smooth_min(p, -p, -2.5);
         p -= s;
         s *= 0.7;;       // pos gets gradually smaller 
     }
@@ -67,7 +67,8 @@ vec3 particles(vec3 p, float t)
     return p;
 }
 
-
+float at1 = 0.0;
+float at2 = 0.0;
 /*
     Generate central collection of particles 
 */
@@ -88,6 +89,10 @@ float map(vec3 p)
     float d2 = length(p2) - 2.0;
     float merge = smooth_min(d1, d2, -1.0);
 
+    // update color mapping 
+    at1 += 0.04 / (0.16 + abs(d1));
+    at2 += 0.04 / (0.16 + abs(d2));
+
     return merge;
 }
 
@@ -107,7 +112,6 @@ void mainImage(out vec4 frag_color, in vec2 frag_coord)
     float ar = i_resolution.x / i_resolution.y;
     vec2 uv = frag_coord / i_resolution.xy;
 
-
     // draw a sphere 
     vec3 s = vec3(0, 0, -60);
     vec3 r = normalize(vec3(-uv, 1));
@@ -119,13 +123,11 @@ void mainImage(out vec4 frag_color, in vec2 frag_coord)
     vec3 p = s;
     int i = 0;
     vec3 col = vec3(0);
-    float at = 0;
 
-    for(i = 0; i < 96; ++i)
+    for(i = 0; i < 64; ++i)
     {
         float m = map(p);      // depth map?
         float d = abs(m);
-        at += 0.07 / (0.1 + abs(m));
 
         if(d < 0.001)
             d = 0.1;        // bloom?
@@ -133,8 +135,10 @@ void mainImage(out vec4 frag_color, in vec2 frag_coord)
         p += r * d;         
         
         // update color
-        float col_param = at * 0.008;
-        col += pow(min(col_param, col_param * 0.5 * sin(0.5 * i_time) + 0.67), 1.6) * vec3(0.1, 0.3, 0.7); 
+        //float col_param = at * 0.008;
+        //col += pow(min(col_param, col_param * 0.5 * sin(0.5 * i_time) + 0.67), 1.6) * vec3(0.8, 0.0, 0.1); 
+        col += pow(at1 * 0.02, 1.1) * vec3(0.77, 0.21, 0.1);
+        col += pow(at2 * 0.03, 1.2) * vec3(0.44, 0.31, 0.1);
 
         //col += pow(at * 0.004, 1.4 * sin(0.25 * i_time)) * vec3(0.1, 0.5, 0.85); 
         //col += pow(at * 0.012, 2) * vec3(0.1, 0.5, 1.0 * cos(0.25 * i_time) + 0.25);

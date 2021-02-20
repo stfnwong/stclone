@@ -208,8 +208,7 @@ int main(int argc, char* argv[])
                     switch(event.key.keysym.sym)
                     {
                         case SDLK_r:
-                            // TODO : this is where we call reload()
-                            std::cout << "Got a R" << std::endl;
+                            status = create_shader(args.vert_shader_fname, args.frag_shader_fname);
                             break;
                     }
                     break;

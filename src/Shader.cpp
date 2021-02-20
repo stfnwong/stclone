@@ -159,6 +159,16 @@ Shader::~Shader()
     }
 }
 
+// operators 
+Shader& Shader::operator=(const Shader& that)
+{
+    this->program = that.program;
+    this->shader[0] = that.shader[0];
+    this->shader[1] = that.shader[1];
+
+    return *this;
+}
+
 /*
  * Shader::ok()
  */

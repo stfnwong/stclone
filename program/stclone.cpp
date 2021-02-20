@@ -60,6 +60,64 @@ void render(float time_now, float time_diff, const float* mouse)
     glDrawArrays(GL_TRIANGLES, 3, 3);
 }
 
+// Load shader 
+int create_shader(const std::string& vert_shader_fname, const std::string& frag_shader_fname)
+{
+    int status;
+    // set up vertex buffer 
+    GLuint vao, quad;
+    glGenVertexArrays(1, &vao);
+    glBindVertexArray(vao);
+
+    // full screen quad
+    float triangles[] = {
+        -1.0f, -1.0f,
+         1.0f, -1.0f,
+         1.0f,  1.0f,
+        -1.0f, -1.0f,
+        -1.0f,  1.0f,
+         1.0f,  1.0f,
+    };
+
+    glGenBuffers(1, &quad);
+    glBindBuffer(GL_ARRAY_BUFFER, quad);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(triangles), triangles, GL_STATIC_DRAW);
+
+    // create shader 
+    std::cout << "Using vertex shader [" << vert_shader_fname << "]" << std::endl;
+    std::cout << "Using fragment shader [" << frag_shader_fname << "]" << std::endl;
+    
+    status = the_shader.load(vert_shader_fname, frag_shader_fname);
+    if(status < 0 || !the_shader.ok())
+    {
+        std::cerr << "[" << __func__ << "] failed to load shader files [" 
+            << vert_shader_fname << "] and [" << frag_shader_fname 
+            << "]" << std::endl;
+
+        return -1;
+    }
+    the_shader.use();
+
+    // connect shader inputs and outputs
+    GLint pos;
+
+    pos = the_shader.getAttrib("position");
+    glVertexAttribPointer(pos, 2, GL_FLOAT, GL_FALSE, 0, 0);
+    glEnableVertexAttribArray(pos);
+
+    pos = the_shader.getAttrib("position_out");
+    glVertexAttribPointer(pos, 2, GL_FLOAT, GL_FALSE, 0, 0);
+    glEnableVertexAttribArray(pos);
+
+
+    uniforms.i_time       = the_shader.getUniform("i_time");
+    uniforms.i_time_delta = the_shader.getUniform("i_time_delta");
+    uniforms.i_resolution = the_shader.getUniform("i_resolution");
+    uniforms.i_mouse      = the_shader.getUniform("i_mouse");
+
+    return 0;
+}
+
 
 // ======== ENTRY POINT  ======== // 
 int main(int argc, char* argv[])
@@ -108,56 +166,9 @@ int main(int argc, char* argv[])
     glewExperimental = GL_TRUE;
     glewInit();
 
-    // set up vertex buffer 
-    GLuint vao, quad;
-    glGenVertexArrays(1, &vao);
-    glBindVertexArray(vao);
-
-    // full screen quad
-    float triangles[] = {
-        -1.0f, -1.0f,
-         1.0f, -1.0f,
-         1.0f,  1.0f,
-        -1.0f, -1.0f,
-        -1.0f,  1.0f,
-         1.0f,  1.0f,
-    };
-
-    glGenBuffers(1, &quad);
-    glBindBuffer(GL_ARRAY_BUFFER, quad);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(triangles), triangles, GL_STATIC_DRAW);
-
-    // create shader 
-    std::cout << "Using vertex shader [" << args.vert_shader_fname << "]" << std::endl;
-    std::cout << "Using fragment shader [" << args.frag_shader_fname << "]" << std::endl;
-    
-    status = the_shader.load(args.vert_shader_fname, args.frag_shader_fname);
-    if(status < 0 || !the_shader.ok())
-    {
-        std::cerr << "[" << __func__ << "] failed to load shader files [" 
-            << args.vert_shader_fname << "] and [" << args.frag_shader_fname 
-            << "]" << std::endl;
-
-        return -1;
-    }
-    the_shader.use();
-
-    // connect shader inputs and outputs
-    GLint pos;
-
-    pos = the_shader.getAttrib("position");
-    glVertexAttribPointer(pos, 2, GL_FLOAT, GL_FALSE, 0, 0);
-    glEnableVertexAttribArray(pos);
-
-    pos = the_shader.getAttrib("position_out");
-    glVertexAttribPointer(pos, 2, GL_FLOAT, GL_FALSE, 0, 0);
-    glEnableVertexAttribArray(pos);
-
-
-    uniforms.i_time       = the_shader.getUniform("i_time");
-    uniforms.i_time_delta = the_shader.getUniform("i_time_delta");
-    uniforms.i_resolution = the_shader.getUniform("i_resolution");
-    uniforms.i_mouse      = the_shader.getUniform("i_mouse");
+    status = create_shader(args.vert_shader_fname, args.frag_shader_fname);
+    if(status < 0)
+        exit(status);
 
     bool running = true;
     auto start = std::chrono::high_resolution_clock::now();
@@ -191,6 +202,16 @@ int main(int argc, char* argv[])
                 case SDL_MOUSEMOTION:
                     mouse[0] = event.motion.x;
                     mouse[1] = event.motion.y;
+                    break;
+
+                case SDL_KEYDOWN:
+                    switch(event.key.keysym.sym)
+                    {
+                        case SDLK_r:
+                            // TODO : this is where we call reload()
+                            std::cout << "Got a R" << std::endl;
+                            break;
+                    }
                     break;
 
                 case SDL_QUIT:

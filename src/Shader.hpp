@@ -29,7 +29,7 @@ class Shader
         ~Shader();
 
         Shader(const Shader& that) = delete;
-        Shader& operator=(const Shader& that) = delete;
+        Shader& operator=(const Shader& that);
         
         bool ok(void) const;
         void use(void);

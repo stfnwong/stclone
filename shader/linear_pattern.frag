@@ -28,7 +28,7 @@ float circle(in vec2 st, in float r)
 
 void mainImage(out vec4 frag_color, in vec2 frag_coord)
 {
-    vec2 st = gl_FragCoord / i_resolution;
+    vec2 st = frag_coord.xy / i_resolution;
 
     st *= 3.0;          // scale up space by 3
     st = fract(st);     // wrap around 1.0
@@ -42,5 +42,5 @@ void mainImage(out vec4 frag_color, in vec2 frag_coord)
 
 void main(void)
 {
-    mainImage(out_color, position_out * i_resolution.xy);
+    mainImage(out_color, gl_FragCoord);
 }

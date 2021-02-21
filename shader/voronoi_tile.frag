@@ -117,4 +117,3 @@ void main(void)
 {
     mainImage(out_color, gl_FragCoord.xy);
 }
-

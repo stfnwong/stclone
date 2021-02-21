@@ -49,8 +49,26 @@ void mainImage(out vec4 frag_color, in vec2 frag_coord)
     // scale 
     st *= 3.0;
     // tile the space 
-    vec2 i_st = floor(st);
-    vec2 f_st = fract(st);
+    /*
+        (From Inigo Quilez: )
+         Most implementations out there suffer from precision issues, because they generate their random points in 
+    "domain" space (like "world" or "object" space), which can be arbitrarily far from the origin. One can solve the issue 
+    moving all the code to higher precision data types, or by being a bit clever. My implementation does not generate the 
+    points in "domain" space, but in "cell" space: once the integer and fractional parts of the shading point are extracted 
+    and therefore the cell in which we are working identified, all we care about is what happens around this cell, meaning we 
+    can drop all the integer part of our coordinates away all together, saving many precision bits. In fact, in a regular 
+    voronoi implementation the integer parts of the point coordinates simply cancel out when the random per cell feature 
+    points are subtracted from the shading point. In the implementation above, we don't even let that cancelation happen, 
+    cause we are moving all the computations to "cell" space. This trick also allows one to handle the case where you want to 
+    voronoi-shade a whole planet - one could simply replace the input to be double precision, perform the floor() and fract() 
+    computations, and go floating point with the rest of the computations without paying the cost of changing the whole 
+    implementation to double precision. Of course, same trick applies to Perlin Noise patterns (but i've never seen it 
+    implemented nor documented anywhere)."
+
+    */
+
+    vec2 i_st = floor(st);          
+    vec2 f_st = fract(st);          // fractional part - used to compute distances within this tile
     float min_dist = 1.0;
 
     // here we iterate over the 9 neighbouring tiles 

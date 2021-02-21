@@ -70,6 +70,7 @@ void mainImage(out vec4 frag_color, in vec2 frag_coord)
     vec2 i_st = floor(st);          
     vec2 f_st = fract(st);          // fractional part - used to compute distances within this tile
     float min_dist = 1.0;
+    vec2 min_point;
 
     // here we iterate over the 9 neighbouring tiles 
     for(int y = -1; y <= 1; ++y)
@@ -87,10 +88,19 @@ void mainImage(out vec4 frag_color, in vec2 frag_coord)
             // find the distance to the point 
             float dist = length(diff);
             // keep the closest distance
-            min_dist = min(dist, min_dist);
+            if(dist < min_dist)
+            {
+                min_dist = dist;
+                min_point = point;
+            }
         }
     } 
-    col += min_dist * vec3(0.86, 0.49, 0.2);
+    col += dot(min_point, vec2(0.3, 0.7)) * vec3(0.12, 0.45, 0.89);
+    //col += min_dist * vec3(0.86, 0.49, 0.2);
+    //col += dot(min_point, vec2(0.3, 0.6));      // assign color based on closest point position
+
+    // add distance field
+    //col.g = min_dist;
 
     // draw the cell center 
     //col += 1.0 - step(0.02, min_dist);

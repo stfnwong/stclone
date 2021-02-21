@@ -24,6 +24,9 @@ void mainImage(out vec4 frag_color, in vec2 frag_coord)
     vec3 color = vec3(0.0);
 
     color += sin(uv.x * cos(i_time / 60.0) * 60.0) + sin(uv.y * cos(i_time / 60.0) * 10.0);
+    color += cos(uv.y * cos(i_time / -20.0) * 60.0) + cos(uv.x * sin(i_time / 10.0) * 10.0);
+
+    color *= sin(i_time / 10.0) * 0.5;          // dampen the brightness
 
     frag_color = vec4(color, 1.0);
 }

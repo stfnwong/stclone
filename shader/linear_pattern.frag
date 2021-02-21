@@ -42,5 +42,5 @@ void mainImage(out vec4 frag_color, in vec2 frag_coord)
 
 void main(void)
 {
-    mainImage(out_color, gl_FragCoord);
+    mainImage(out_color, gl_FragCoord.xy);
 }

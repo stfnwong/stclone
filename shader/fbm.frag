@@ -63,7 +63,8 @@ void mainImage(out vec4 frag_color, in vec2 frag_coord)
     st.x *= i_resolution.x / i_resolution.y;
 
     vec3 col = vec3(0.0);
-    col += fbm(st * 3.0);
+    col += fbm(st * 3.0) * vec3(0.1, 0.23, 0.78);
+    col += fbm(st * 0.7) * vec3(0.98, 0.78, 0.21);
 
     frag_color = vec4(col, 1.0);
 }

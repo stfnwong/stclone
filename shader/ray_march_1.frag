@@ -17,6 +17,9 @@ uniform vec4  i_mouse;
 #define MAX_DIST 100.0
 #define SURFACE_DIST 0.01
 
+
+
+
 // Distance function for a sphere at (0, 1, 6)
 float get_dist(vec3 p)
 {
@@ -27,6 +30,31 @@ float get_dist(vec3 p)
 
     return d;
 }
+
+
+// compute normal by sampling two points and finding slope
+vec3 get_normal(vec3 p)
+{
+    float d = get_dist(p);      // find dist at point p
+    vec2 e = vec2(0.01, 0.0);
+    // sample from a point e near to p
+    vec3 n = d - vec3(get_dist(p-e.xyy), get_dist(p-e.yxy), get_dist(p - e.yyx));
+    
+    return normalize(n);
+}
+
+
+float get_light(vec3 p)
+{
+    vec3 light_pos = vec3(0, 5.0, 6.0);     // where the light comes from in the scene
+    vec3 l = normalize(light_pos - p);      
+    vec3 n = get_normal(p);
+
+    return 1.0;         // TODO: finish implementation
+}
+
+
+
 
 
 float ray_march(vec3 ro, vec3 rd)
@@ -56,9 +84,14 @@ void mainImage(out vec4 frag_color, in vec2 frag_coord)
     vec3 rd = normalize(vec3(uv.x, uv.y, 1.0));
 
     float d = ray_march(ro, rd);
+
+    vec3 p = ro + rd * d;       // find the point we want to light 
+    float diff = get_light(p);
+
     d /= 8.0;
 
-    col = vec3(d);
+    //col = vec3(diff);
+    col = get_normal(p);
 
     frag_color = vec4(col, 1.0);
 }

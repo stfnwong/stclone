@@ -44,19 +44,6 @@ vec3 get_normal(vec3 p)
 }
 
 
-float get_light(vec3 p)
-{
-    vec3 light_pos = vec3(0, 5.0, 6.0);     // where the light comes from in the scene
-    vec3 l = normalize(light_pos - p);      
-    vec3 n = get_normal(p);
-
-    return 1.0;         // TODO: finish implementation
-}
-
-
-
-
-
 float ray_march(vec3 ro, vec3 rd)
 {
     float d_origin = 0.0;         // initial distance
@@ -71,6 +58,27 @@ float ray_march(vec3 ro, vec3 rd)
     }
 
     return d_origin;          // distance to intersection point we found 
+}
+
+
+float get_light(vec3 p)
+{
+    vec3 light_pos = vec3(0, 5.0, 6.0);     // where the light comes from in the scene
+   
+    // move the light
+    light_pos.xz += vec2(sin(i_time), cos(i_time));
+
+    vec3 l = normalize(light_pos - p);      
+    vec3 n = get_normal(p);
+
+    float diff = clamp(dot(n, l), 0.0, 1.0);
+    // find shadow by casting another ray from just above the plane 
+    // towards the light
+    float d_light = ray_march(p + n * SURFACE_DIST, l);
+    if(d_light < length(light_pos - p))
+        diff *= 0.1;
+
+    return diff;
 }
 
 
@@ -90,8 +98,8 @@ void mainImage(out vec4 frag_color, in vec2 frag_coord)
 
     d /= 8.0;
 
-    //col = vec3(diff);
-    col = get_normal(p);
+    col = vec3(diff);
+    //col = get_normal(p);
 
     frag_color = vec4(col, 1.0);
 }

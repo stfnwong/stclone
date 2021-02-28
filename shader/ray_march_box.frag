@@ -1,5 +1,5 @@
 /* 
-    Ray marching test
+    Ray march a box
 */
 
 #version 330 core 
@@ -19,15 +19,51 @@ uniform vec4  i_mouse;
 
 
 // Distance function for a sphere at (0, 1, 6)
+//float get_dist(vec3 p)
+//{
+//    vec4 sphere = vec4(0.0, 1.0, 6.0, 1.0);
+//    float ds = length(p - sphere.xyz) - sphere.w;
+//    float dp = p.y;
+//    float d = min(ds, dp);      // for these distance functions we always take the closest point in the scene
+//
+//    return d;
+//}
+
+// ======= SHAPES ======== //
+
+float box(vec3 p, vec3 s)
+{
+    p = abs(p) - s;
+    return length(max(p, 0.0)) + min(max(p.x, max(p.y, p.z)), 0.0);
+}
+
+// capsule from a point a -> b with radius r
+float capsule(vec3 p, vec3 a, vec3 b, float r)
+{
+    vec3 ab = b - a;
+    vec3 ap = p - a;
+
+    float t = dot(ab, ap) / dot(ab, ab);
+    t = clamp(t, 0.0, 1.0);
+
+    vec3 c = a + t  * ab;
+
+    return length(p - c) - r;
+}
+
 float get_dist(vec3 p)
 {
-    vec4 sphere = vec4(0.0, 1.0, 6.0, 1.0);
-    float ds = length(p - sphere.xyz) - sphere.w;
-    float dp = p.y;
-    float d = min(ds, dp);      // for these distance functions we always take the closest point in the scene
+    // plane params 
+    float plane_dist = p.y;
+    // capsule params 
+    vec3 a = vec3(0.0, 1.0, 6.0);
+    vec3 b = vec3(1.0, 2.0, 6.0);
+    float r = 0.5;
 
-    return d;
+    float cap_dist =  capsule(p, a, b, r);
+    return min(cap_dist, plane_dist);
 }
+
 
 
 // compute normal by sampling two points and finding slope
@@ -41,7 +77,9 @@ vec3 get_normal(vec3 p)
     return normalize(n);
 }
 
-
+/* 
+    RAY MARCH INNER LOOP 
+*/
 float ray_march(vec3 ro, vec3 rd)
 {
     float d_origin = 0.0;         // initial distance
@@ -78,6 +116,8 @@ float get_light(vec3 p)
 
     return diff;
 }
+
+
 
 
 void mainImage(out vec4 frag_color, in vec2 frag_coord)

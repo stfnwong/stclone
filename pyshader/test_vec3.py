@@ -23,7 +23,22 @@ class TestVec3:
         v1 = Vec3(1.0, 1.0, 1.0)
         v2 = Vec3(1.0, 1.0, 1.0)
 
-        from pudb import set_trace; set_trace()
-
         v3 = v1 + v2
         assert v3 == Vec3(2.0, 2.0, 2.0)
+
+    def test_vec3_sub(self) -> None:
+        v1 = Vec3(1.0, 1.0, 1.0)
+        v2 = Vec3(1.0, 1.0, 1.0)
+
+        v3 = v1 - v2
+        assert v3 == Vec3(0.0, 0.0, 0.0)
+
+    def test_vec3_mul(self) -> None:
+        v1 = Vec3(1.0, 1.0, 1.0)
+        v2 = Vec3(1.0, 1.0, 1.0)
+
+        v3 = v1 * v2
+        assert v3 == Vec3(1.0, 1.0, 1.0)
+        v4 = Vec3(2.0, 2.0, 2.0)
+        v5 = v4 * v3;
+        assert v5 == Vec3(2.0, 2.0, 2.0)

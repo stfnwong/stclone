@@ -18,19 +18,19 @@ uniform vec4  i_mouse;
 #define SURFACE_DIST 0.01
 
 
-// Distance function for a sphere at (0, 1, 6)
-//float get_dist(vec3 p)
-//{
-//    vec4 sphere = vec4(0.0, 1.0, 6.0, 1.0);
-//    float ds = length(p - sphere.xyz) - sphere.w;
-//    float dp = p.y;
-//    float d = min(ds, dp);      // for these distance functions we always take the closest point in the scene
-//
-//    return d;
-//}
-
 // ======= SHAPES ======== //
+// Distance function for a sphere at (0, 1, 6)
+float sphere(vec3 p)
+{
+    vec4 sphere = vec4(0.0, 1.0, 6.0, 1.0);
+    float ds = length(p - sphere.xyz) - sphere.w;
+    float dp = p.y;
+    float d = min(ds, dp);      // for these distance functions we always take the closest point in the scene
 
+    return d;
+}
+
+// a box
 float box(vec3 p, vec3 s)
 {
     p = abs(p) - s;
@@ -51,6 +51,8 @@ float capsule(vec3 p, vec3 a, vec3 b, float r)
     return length(p - c) - r;
 }
 
+// Call the distance function for the shape we are interested in
+// we need all this stuff for the capsule
 float get_dist(vec3 p)
 {
     // plane params 

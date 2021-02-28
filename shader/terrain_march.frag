@@ -61,7 +61,7 @@ float get_noise(vec2 v)
 */
 float height_function(float x, float z)
 {
-    return sin(x) * cos(z);
+    return sin(x) * cos(z) + 0.25 * cos(2.0 * x);
 }
 
 //bool cast_ray(const vec3 ro, const vec3 rd, inout float res_t)

@@ -5,3 +5,6 @@
 *.o
 # Ignore tags 
 tags
+
+# Now that there is python stuff, ignore compiled python stuff 
+*.pyc

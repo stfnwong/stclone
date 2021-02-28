@@ -1,0 +1,13 @@
+name: pyshader
+channels:
+  - conda-forge
+  - anaconda
+dependencies:
+  # python related packages
+  - python>=3.7
+  - pudb
+  - pytest>=5.4
+  - ipython>=7.17
+  - numpy>=1.15.0
+  - matplotlib>=3.1.1
+  - mypy

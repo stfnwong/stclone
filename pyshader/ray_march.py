@@ -22,9 +22,17 @@ MAX_STEPS = int(128)
 
 # Distance function of a sphere
 def get_dist(p: Vec3) -> float:
-    pass
+    w = 1.0
+    sphere = Vec3(0.0, 1.0, 6.0)
+    ds = len(p - sphere) - w        # distance to sphere
+    dp = p.y                        # distance to point
+    d = min(ds, dp)
+
+    return d
 
 
+# TODO : need to return a list of the various distances as we march towards
+# the scene
 def ray_march(ro: Vec3, rd: Vec3) -> float:
     d_origin = 0.0
 
@@ -36,3 +44,26 @@ def ray_march(ro: Vec3, rd: Vec3) -> float:
             break
 
     return d_origin
+
+
+def render_image(ro: Vec3, width:int, height:int) -> np.ndarray:
+    image = np.zeros((width, height))
+
+    for h in range(height):
+        for w in range(width):
+            # TODO: probably need to get the pixel position in coord space here
+            # ...
+            pass
+
+
+
+def main() -> None:
+    height = 240
+    width = 320
+
+    camera_pos = Vec3(0.0, 1.0, 0.0)
+
+    image = render_image(camera_pos, width, height)
+
+
+

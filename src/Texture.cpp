@@ -9,4 +9,9 @@
 
 
 // ======== TEXTURE ======== //
-Texture::Texture() : id(0), tex_type("") {} 
+Texture::Texture() : id(0), unit(0), tex_type(TEXTURETYPE::TEX_1D) {} 
+
+Texture::Texture(int h, int w, const uint8_t* data) 
+{
+
+}

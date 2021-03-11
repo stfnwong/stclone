@@ -13,6 +13,7 @@
 // input args
 #include <getopt.h>
 
+#include "Texture.hpp"
 #include "Shader.hpp"
 #include "Util.hpp"
 
@@ -43,15 +44,56 @@ struct Args
     {} 
 };
 
-// Shader
+// Shader 
+// Its global here since there is only ever one 
 Shader the_shader;
 ShaderUniforms uniforms;
+
+// These methods access the global shader directly
+void set_shader_constant(const std::string& cname, float x)
+{
+    GLint location = the_shader.getUniform(cname);
+    if(location != -1)
+    {
+        the_shader.setUniform1f(x);
+    }
+}
+
+void set_shader_constant(const std::string& cname, float x, float y)
+{
+    GLint location = the_shader.getUniform(cname);
+    if(location != -1)
+    {
+        the_shader.setUniform2f(x, y);
+    }
+}
+
+
+void set_shader_texture(const std::string& tex_name, Texture& texture)
+{
+    GLint tex_location = the_shader.getUniform(tex_name);
+    if(tex_location != -1)
+    {
+        glProgramUniform1i(the_shader.getProgram(), tex_location, texture.unit);
+        glActiveTexture(GL_TEXTURE0 + texture.unit);        
+        switch(texture.tex_type)
+        {
+            case TEXTURETYPE::TEX_1D:
+                glBindTexture(GL_TEXTURE_1D, texture.id);
+                break;
+            case TEXTURETYPE::TEX_2D:
+                glBindTexture(GL_TEXTURE_2D, texture.id);
+                break;
+        }
+    }
+}
 
 /*
  * render()
  */
 void render(float time_now, float time_diff, const float* mouse)
 {
+    // TODO: do texture update here
     glUniform1f(uniforms.i_time, time_now);
     glUniform1f(uniforms.i_time_delta, time_diff);
     glUniform2f(uniforms.i_resolution, DISP_W, DISP_H);
@@ -109,6 +151,7 @@ int create_shader(const std::string& vert_shader_fname, const std::string& frag_
     glVertexAttribPointer(pos, 2, GL_FLOAT, GL_FALSE, 0, 0);
     glEnableVertexAttribArray(pos);
 
+    // TODO : create a texture and attach it to the shader
 
     uniforms.i_time       = the_shader.getUniform("i_time");
     uniforms.i_time_delta = the_shader.getUniform("i_time_delta");

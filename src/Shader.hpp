@@ -33,10 +33,14 @@ class Shader
         
         bool ok(void) const;
         void use(void);
-        int load(const std::string& vert_fname, const std::string& frag_fname);
+        int  load(const std::string& vert_fname, const std::string& frag_fname);
+        GLint getProgram(void) const;
 
-        int getAttrib(const std::string& a) const;
-        int getUniform(const std::string& u) const;
+        int  getAttrib(const std::string& a) const;
+        int  getUniform(const std::string& u) const;
+        int  getUniform1f(const std::string& u) const;
+        int  getUnifrom2f(const std::string& u) const;
+        void setUniform1f(const std::string& name, float x);
         void setUniform2f(const std::string& uname, float x, float y);
         void setUniform3f(const std::string& uname, float x, float y, float z);
         void setUniform4f(const std::string& uname, float x, float y, float z, float w);

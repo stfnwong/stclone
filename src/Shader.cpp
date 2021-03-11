@@ -71,7 +71,7 @@ std::string load_shader(const std::string& filename)
  */
 Shader::Shader() 
 {
-    this->program = 0;
+    this->program   = 0;
     this->shader[0] = 0;
     this->shader[1] = 0;
 }
@@ -193,6 +193,14 @@ int Shader::load(const std::string& vert_fname, const std::string& frag_fname)
 }
 
 /*
+ * getProgram()
+ */
+GLint Shader::getProgram(void) const
+{
+    return this->program;
+}
+
+/*
  * Shader::getAttrib()
  */
 int Shader::getAttrib(const std::string& a) const
@@ -202,10 +210,19 @@ int Shader::getAttrib(const std::string& a) const
 
 /*
  * Shader::getUniform()
+ * TODO: change name to getUniformLocation?
  */
 int Shader::getUniform(const std::string& u) const
 {
     return glGetUniformLocation(this->program, u.c_str());
+}
+
+
+void Shader::setUniform1f(const std::string& uname, float x)
+{
+    int u = this->getUniform(uname);
+    if(u != -1)
+        glUniform1f(u, x);
 }
 
 void Shader::setUniform2f(const std::string& uname, float x, float y)
@@ -228,6 +245,3 @@ void Shader::setUniform4f(const std::string& uname, float x, float y, float z, f
     if(u != -1)
         glUniform4f(u, x, y, z, w);
 }
-
-
-

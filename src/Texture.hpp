@@ -26,12 +26,17 @@ struct Texture
     int unit;
     //const char* tex_type;
     TEXTURETYPE tex_type;
+    int width;
+    int height;
 
     public:
         Texture();
-        Texture(int h, int w, const uint8_t* data);
+        Texture(int w, int h, const uint8_t* data);
         Texture& operator=(const Texture& that) = default;
         // TODO : load, etc
+
+        void updateR32(const float* data);
+        void release(void);
 };
 
 #endif /*__TEXTURE_HPP*/

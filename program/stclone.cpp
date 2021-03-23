@@ -26,6 +26,7 @@ struct ShaderUniforms
     GLuint i_time_delta;
     GLuint i_resolution;
     GLuint i_mouse;
+    GLuint i_channel0;
 };
 
 /*
@@ -49,23 +50,17 @@ struct Args
 Shader the_shader;
 ShaderUniforms uniforms;
 
+// TODO: try putting textures here 
+
 // These methods access the global shader directly
 void set_shader_constant(const std::string& cname, float x)
 {
-    GLint location = the_shader.getUniform(cname);
-    if(location != -1)
-    {
-        the_shader.setUniform1f(x);
-    }
+    the_shader.setUniform1f(cname, x);
 }
 
 void set_shader_constant(const std::string& cname, float x, float y)
 {
-    GLint location = the_shader.getUniform(cname);
-    if(location != -1)
-    {
-        the_shader.setUniform2f(x, y);
-    }
+    the_shader.setUniform2f(cname, x, y);
 }
 
 
@@ -94,6 +89,8 @@ void set_shader_texture(const std::string& tex_name, Texture& texture)
 void render(float time_now, float time_diff, const float* mouse)
 {
     // TODO: do texture update here
+    
+    
     glUniform1f(uniforms.i_time, time_now);
     glUniform1f(uniforms.i_time_delta, time_diff);
     glUniform2f(uniforms.i_resolution, DISP_W, DISP_H);

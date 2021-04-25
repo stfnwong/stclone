@@ -100,7 +100,7 @@ vec2 raymarch(vec3 ro, vec3 rd, out int mat_type) {
 	float t = 0.02;
 	float tmax = MAX_LENGTH;
 
-	for(;;) {
+	for(;t <  tmax;) {
 		int m = 0;
 		vec3 rp = ro + rd * t;
 		//float h = terrain(rp.xz, m);

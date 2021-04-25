@@ -179,14 +179,14 @@ void mainImage(out vec4 frag_color, in vec2 frag_coord)
 	float smax = 0.19;
 
 	vec3 color1 = vec3(1.0, 0.0, 0.0);
-	vec3 color2 = vec3(1.0, 0.0, 0.0);
+	vec3 color2 = vec3(0.0, 0.233, 0.337);
 
 	color1 = color1 + vec3(noise_2d(rp.xz * 8.1), noise_2d(rp.xz * 0.998), noise_2d(rp.zx)) * 0.20;
 	color2 = color2 + vec3(noise_2d(rp.xz * 2.0), noise_2d(rp.zx * 0.44), noise_2d(rp.zx)) * 0.22;
 
 	float s = 1.0 - abs(dot(n, vec3(0.0, 1.0, 0.0)));
 	vec3 col = mix(color1, color2, clamp(s, smin, smax));
-
+    col = col * 0.3 + col * kd;
 	//float col_var = (noise_2d(rp.xz * 225.0) + noise_2d(rp.zx * 225.0)) * 0.5;
 	//col = col * col_var;
 

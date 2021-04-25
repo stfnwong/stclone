@@ -20,6 +20,11 @@ const float MAX_LENGTH = 180.0;
 const vec3 LIGHT_DIRECTION = normalize(vec3(1.0, -0.3, -0.4));
 const vec3 LIGHT_COLOR = normalize(vec3(0.950, 0.619, 0.180));
 
+// fog emulation
+const float FOG_HEIGHT = 0.01;     // height of background fog
+const float FOG_FADE_HEIGHT = 0.2; // fade the fog into the background (ie: "sky") at this height
+const vec3 FOG_COLOR = vec3(0.774, 0.345, 0.655);     // color of the fog
+
 // Random noise generator 
 float random(in vec2 st) { 
     return fract(sin(dot(st.xy, vec2(12.9898,78.233))) * 43758.5453123);
@@ -149,7 +154,33 @@ vec3 get_shading(vec3 p, vec3 ld, vec3 n) {
 	return (kd * LIGHT_COLOR * sh);
 }
 
+vec3 sky(vec3 ro, vec3 rd, vec2 st) {
+	vec3 col = vec3(0.6, 0.8, 0.77);
 
+	col += smoothstep(0.3, 0.6, fbm(rd.xz * 90.0 / rd.y));
+
+	// simulate a light
+	float d = dot(-LIGHT_DIRECTION, rd);
+	if(d > 0.0) 
+		col = mix(col, vec3(1.0, 1.0, 0.44), pow(d, 20.0));
+	if(rd.y < FOG_FADE_HEIGHT)
+		col = mix(FOG_COLOR, col, (rd.y - FOG_HEIGHT) / (FOG_FADE_HEIGHT - FOG_HEIGHT));
+	if(rd.y < FOG_HEIGHT)
+		col = FOG_COLOR;
+
+	return clamp(col, 0.0, 1.0);  
+}
+	
+// a bad Ambient Occlusion 
+float bad_ao(vec3 n) {
+	return abs(dot(n, vec3(0.0, 1.0, 0.0)));
+}
+
+float fog(float dist) {
+	const float density = 0.006;
+	return 1.0 - 1.0 / exp(pow(dist * density, 2.0));
+}
+ 
 void mainImage(out vec4 frag_color, in vec2 frag_coord)
 {
 	vec2 st = frag_coord.xy / i_resolution.xy;
@@ -186,9 +217,15 @@ void mainImage(out vec4 frag_color, in vec2 frag_coord)
 
 	float s = 1.0 - abs(dot(n, vec3(0.0, 1.0, 0.0)));
 	vec3 col = mix(color1, color2, clamp(s, smin, smax));
+	// mix in sky
+	//col = mix(col, sky(ro, rd, height), fog(height.y));
     col = col * 0.3 + col * kd;
+	col = mix(col, FOG_COLOR, fog(height.y));
 	//float col_var = (noise_2d(rp.xz * 225.0) + noise_2d(rp.zx * 225.0)) * 0.5;
 	//col = col * col_var;
+
+	if(height.x == -1.0)
+		col = sky(ro, rd, st);
 
 	frag_color = vec4(col, 1.0);
 }

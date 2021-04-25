@@ -23,7 +23,7 @@ const vec3 LIGHT_COLOR = normalize(vec3(0.950, 0.619, 0.180));
 // fog emulation
 const float FOG_HEIGHT = 0.01;     // height of background fog
 const float FOG_FADE_HEIGHT = 0.2; // fade the fog into the background (ie: "sky") at this height
-const vec3 FOG_COLOR = vec3(0.774, 0.345, 0.655);     // color of the fog
+const vec3 FOG_COLOR = vec3(0.9774, 0.7345, 0.655);     // color of the fog
 
 // Random noise generator 
 float random(in vec2 st) { 
@@ -209,20 +209,34 @@ void mainImage(out vec4 frag_color, in vec2 frag_coord)
 	float smin = 0.05;
 	float smax = 0.19;
 
-	vec3 color1 = vec3(1.0, 0.0, 0.0);
-	vec3 color2 = vec3(0.0, 0.233, 0.337);
+	vec3 color1 = vec3(0.934, 0.7556, 0.0);
+	vec3 color2 = vec3(0.0, 0.233, 0.7337);
 
-	color1 = color1 + vec3(noise_2d(rp.xz * 8.1), noise_2d(rp.xz * 0.998), noise_2d(rp.zx)) * 0.20;
-	color2 = color2 + vec3(noise_2d(rp.xz * 2.0), noise_2d(rp.zx * 0.44), noise_2d(rp.zx)) * 0.22;
+	if(mat_type == 1) {
+		color1 = vec3(0.925, 0.724, 0.576);
+		color2 = vec3(0.474, 0.368, 0.212);
+	}
+
+	if(mat_type == 2) {
+		color1 = color1 + vec3(noise_2d(rp.xz * 8.1), noise_2d(rp.xz * 0.998), noise_2d(rp.zx)) * 0.20;
+		color2 = color2 + vec3(noise_2d(rp.xz * 5.0), noise_2d(rp.zx * 0.44), noise_2d(rp.zx)) * 0.22;
+	}
+	
+	
+	//color1 = color1 + vec3(noise_2d(rp.xz * 8.1), noise_2d(rp.xz * 0.998), noise_2d(rp.zx)) * 0.20;
+	//color2 = color2 + vec3(noise_2d(rp.xz * 2.0), noise_2d(rp.zx * 0.44), noise_2d(rp.zx)) * 0.22;
 
 	float s = 1.0 - abs(dot(n, vec3(0.0, 1.0, 0.0)));
 	vec3 col = mix(color1, color2, clamp(s, smin, smax));
+	
 	// mix in sky
 	//col = mix(col, sky(ro, rd, height), fog(height.y));
-    col = col * 0.3 + col * kd;
-	col = mix(col, FOG_COLOR, fog(height.y));
+
 	//float col_var = (noise_2d(rp.xz * 225.0) + noise_2d(rp.zx * 225.0)) * 0.5;
 	//col = col * col_var;
+	
+    col = col * 0.3 * bad_ao(n) + col * kd;
+	col = mix(col, FOG_COLOR, fog(height.y));
 
 	if(height.x == -1.0)
 		col = sky(ro, rd, st);

@@ -155,7 +155,7 @@ float terrain_high(in vec2 x) {
 float ray_cast(in vec3 ro, in vec3 rd, in float tmin, in float tmax) {
   float t = tmin;
 
-  for(int i = 0; i < 300; ++i) {
+  for(int i = 0; i < 100; ++i) {
 	vec3 pos = ro + t * rd;
 	float h = pos.y - terrain_mid(pos.xz);
 	if(abs(h) < (0.0015 * t) || t > tmax)
@@ -201,7 +201,8 @@ vec4 render(in vec3 ro, in vec3 rd) {
   float sundot = clamp(dot(rd, light1), 0.0, 1.0);
   vec3 col;
 
-  float t = ray_cast(ro, rd, t_min, t_max);
+  //float t = ray_cast(ro, rd, t_min, t_max);
+  float t = t_min + 0.01;
 
   if(t > t_max) {
 	// sky
@@ -234,7 +235,7 @@ vec4 render(in vec3 ro, in vec3 rd) {
 	
 	col = mix(col, 0.20 * vec3(0.45, 0.30, 0.15) * (0.50 + 0.50 * r), smoothstep(0.7, 0.9, nor.y));
 	col = mix(col, 0.15 * vec3(0.30, 0.30, 0.10) * (0.25 + 0.75 * r), smoothstep(0.95, 1.0, nor.y));
-	col *= 0.1 * 1.8 * sqrt(fbm(pos.xz * 0.04) * fbm(pos.xz * 0.005));
+	//col *= 0.1 * 1.8 * sqrt(fbm(pos.xz * 0.04) * fbm(pos.xz * 0.005));
 
 	// TODO: snow
 
@@ -376,7 +377,8 @@ void mainImage(out vec4 frag_color, in vec2 frag_coord)
 	
   }
   // draw the height and velocity vectors for the terrain 
-  frag_color = vec4(total, vel);
+  //frag_color = vec4(total, vel);
+  frag_color = vec4(total, 1.0); //vec4(total, 1.0);
 }
 
 

@@ -99,10 +99,26 @@ void mainImage(out vec4 frag_color, in vec2 frag_coord)
     uv -= 0.125;
     uv /= vec2(i_resolution.y / i_resolution.x, 1.0);
 
-    vec3 s = vec3(0, 0, -20);
-    vec3 r = normalize(vec3(-uv, 4.0));
+    vec3 s = vec3(0, 0, -20);   
+    vec3 t = vec3(0.0);
 
-    s.z += i_time * 12.0;
+    float advance = i_time * 12.0;
+    s.z -= advance;
+    t.z -= advance;
+    s -= tunnel2(s);
+    t -= tunnel2(t);
+
+    // normalization constants 
+    vec3 cz = normalize(t - s);
+    vec3 cx = normalize(cross(cz, vec3(0, 1, 0)));
+    vec3 cy = normalize(cross(cz, cx));
+
+    float fov = 1.0;
+    vec3 r = normalize(cx * uv.x + cy * uv.y + cz * fov);
+
+    //vec3 r = normalize(vec3(-uv, 4.0));
+    //s.z += i_time * 12.0;
+    //s -= tunnel2(s);
     //s -= 0.5 * sin(tunnel2(s));
 
     // set up renderer 

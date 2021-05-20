@@ -63,7 +63,8 @@ vec3 tunnel(vec3 p)
 }
 
 // Lighting globals 
-vec3 light_pos = vec3(0.0, 0.0, -8.0);
+vec3 light_pos = vec3(0.0, 0.0, -12.0);
+float light = 0.0;
 
 // distance field 
 float map(vec3 p) 
@@ -82,8 +83,18 @@ float map(vec3 p)
     // are equal to the size of the second argument. If the sphere term is
     // negative then we cut spheres from the "tunnel" by the radius 
     d2 = max(d2, -sphere(p3, 1.2));
+    //d2 = min(d2, length(light_pos - p) - 0.5);
+
+    // light 
+    float dl = length(light_pos - p) - 0.5;
+    light += 1.2 / (0.1 + dl * dl);
+    d2 = min(d2, dl);
+    d2 *= 0.7;
 
     // alternative tunnel interiors
+    //float cc = abs(cylinder(p.xy, 11.1)) - 2.0;
+    //cc = max(cc ,abs(d2) - 1.0);
+    //d2 = min(d2, cc);
 
     // other things...?
     vec3 p4 = p2;
@@ -105,12 +116,13 @@ void mainImage(out vec4 frag_color, in vec2 frag_coord)
     uv /= vec2(i_resolution.y / i_resolution.x, 1.0);
 
     vec3 s = vec3(0, 0, 4);   
-    vec3 t = vec3(0.0);
+    vec3 t = vec3(0.0, 0.0, 0.4);
 
     float advance = i_time * 12.0;
     s.z -= advance;
     t.z -= advance;
-    s -= 0.75 * tunnel(s);
+    //s -= 1.75 * tunnel(s);
+    s -= tunnel(s);
     t -= tunnel(t);
 
     // normalization constants 
@@ -124,13 +136,11 @@ void mainImage(out vec4 frag_color, in vec2 frag_coord)
 
     // set up renderer 
     vec3 p = s;
-	//p += i_time * vec3(0.0, 0.0, 10.0);     // TODO: more sophisticated path than just a line
     int i = 0;
 
     for(i = 0; i < MAX_RAYMARCH_STEPS; ++i)
     {
         float d = map(p);      
-
         if(d < MIN_RAYMARCH_DIST)
             break;
 
@@ -139,15 +149,19 @@ void mainImage(out vec4 frag_color, in vec2 frag_coord)
 
     // adjust lighting 
     vec3 n = normalize(map(p) - vec3(map(p - offset.xyy), map(p - offset.yxy), map(p - offset.yyx)));
-    light_pos.z -= advance;
-    light_pos -= tunnel(light_pos);
+    //light_pos.z -= advance;
+    //light_pos -= tunnel(light_pos);
+
+    light_pos += t;
     
     vec3 l = normalize(light_pos - p);
+    vec3 light_color = vec3(1.0, 0.75, 0.22);
 
     vec3 col = vec3(0.0);
-    float fog = 8.0 / (1 + length(light_pos - p));
-    //col += pow(1.0 - i / 101.0, 6.0);
-    col += (dot(n, l) * 0.5 + 0.5) * fog;
+    float fog = 8.0 / (1.0 + length(light_pos - p));
+    //col += (dot(n, l) * 0.5 + 0.5) * fog;
+    col += light * light_color;
+    //col += pow(1.0 - i / 101.0, 30.0);
     
     frag_color = vec4(col, 1.0);
 }

@@ -334,7 +334,6 @@ void mainImage(out vec4 frag_color, in vec2 frag_coord)
   vec3 rd = cam * normalize(vec3(p, fl));
   vec4 res = render(ro, rd);
   t = min(t, res.w);
-
   total += res.xyz;
 
   // divide total here if doing AA
@@ -377,8 +376,8 @@ void mainImage(out vec4 frag_color, in vec2 frag_coord)
 	
   }
   // draw the height and velocity vectors for the terrain 
-  //frag_color = vec4(total, vel);
-  frag_color = vec4(total, 1.0); //vec4(total, 1.0);
+  frag_color = vec4(total, vel);
+
 }
 
 

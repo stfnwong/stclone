@@ -27,7 +27,7 @@ mat2 rot(float a)
 }
 
 
-// shapes
+// ======== SHAPES ======== //
 float cylinder(vec2 p, float s)
 {
     return length(p) - s;
@@ -36,6 +36,12 @@ float cylinder(vec2 p, float s)
 float sphere(vec3 p, float r)
 {
     return length(p) - r;
+}
+
+float box(vec3 p, vec3 s)
+{
+    p = abs(p) - s;
+    return max(p.x, max(p.y, p.z));
 }
 
 // illusion
@@ -86,10 +92,13 @@ float map(vec3 p)
     //d2 = min(d2, length(light_pos - p) - 0.5);
 
     // light 
-    float dl = length(light_pos - p) - 0.5;
-    light += 1.2 / (0.1 + dl * dl);
+    p2.z = repeat(p.z, 67.0);
+    vec3 relative_pos = light_pos - p;
+    float dl = length(relative_pos) - 0.5;
+    //float dl = length(light_pos - p) - 0.5;
+    light += 1.0 / (0.2 + dl * dl);
     d2 = min(d2, dl);
-    d2 *= 0.7;
+    d2 = min(d2, max(-relative_pos.y, length(relative_pos.xz) - 0.3));
 
     // alternative tunnel interiors
     //float cc = abs(cylinder(p.xy, 11.1)) - 2.0;
@@ -137,6 +146,7 @@ void mainImage(out vec4 frag_color, in vec2 frag_coord)
     // set up renderer 
     vec3 p = s;
     int i = 0;
+    float dd = 0;
 
     for(i = 0; i < MAX_RAYMARCH_STEPS; ++i)
     {
@@ -145,6 +155,7 @@ void mainImage(out vec4 frag_color, in vec2 frag_coord)
             break;
 
         p += r * d;         
+        dd += d;
     }
 
     // adjust lighting 
@@ -152,16 +163,29 @@ void mainImage(out vec4 frag_color, in vec2 frag_coord)
     //light_pos.z -= advance;
     //light_pos -= tunnel(light_pos);
 
-    light_pos += t;
-    
-    vec3 l = normalize(light_pos - p);
-    vec3 light_color = vec3(1.0, 0.75, 0.22);
+    vec3 light_pos_2 = light_pos;
+    light_pos_2 -= tunnel(light_pos_2) * 0.4;
+    vec3 pl = p;
+    pl.z = repeat(pl.z, 67.0);
+    vec3 l = normalize(light_pos_2 - p);
 
+    float ao = clamp(map(p + n), 0.0, 1.0);
+    
+    vec3 light_color = vec3(1.0, 0.75, 0.22);
+    vec3 fog_color = vec3(0.6, 0.6, 0.7);
+    //vec3 fog_color = vec3(0.43, 0.25, 0.31);
+
+    float fog = 12.0 / (1.0 + length(light_pos - pl));
     vec3 col = vec3(0.0);
-    float fog = 8.0 / (1.0 + length(light_pos - p));
-    //col += (dot(n, l) * 0.5 + 0.5) * fog;
+    col += (dot(n, l) * 0.5 + 0.5) * fog * fog_color * ao;
     col += light * light_color;
+    
+    // mix another blue 
+    //col += vec3(0.22, 0.22, 0.99) * 0.05 * vec3(0.4, 0.5, 1.0);
+    col += pow(dd * 0.007, 2.0);
     //col += pow(1.0 - i / 101.0, 30.0);
+    col *= 1.2 - length(uv);
+    col = 1.0 - exp(-col * 2.2);
     
     frag_color = vec4(col, 1.0);
 }

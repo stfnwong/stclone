@@ -19,19 +19,38 @@ uniform vec4  i_mouse;
 
 
 // shapes
-float cyl(vec2 p, float s)
+float cylinder(vec2 p, float s)
 {
     return length(p) - s;
 }
 
+float sphere(vec3 p, float r)
+{
+    return length(p) - r;
+}
+
+// illusion
+vec3 repeat(vec3 p, vec3 s) 
+{
+    return ((fract(p / s - 0.5) - 0.5)) * s;
+}
+
+
+// distance field 
 float map(vec3 p) 
 {
     vec3 p2 = p;
     float dd = p2.z + i_time;
     p2.x += 2.0 * sin(dd * 0.075 + 4.0); 
-    p2.y += 4.0 * cos(dd * 0.25 + 0.5);
+    p2.y += 4.0 * cos(dd * 0.125); 
 
-    return -cyl(p2.xy, 8.0);
+    float d2 = -cylinder(p2.xy, 8.0);
+    vec3 p3 = repeat(p2, vec3(1.0));
+
+    d2 = max(d2, sphere(p3, 0.5));
+    return d2;
+
+    //return -cylinder(p2.xy, 8.0);
 }
 
 

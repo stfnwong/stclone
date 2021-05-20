@@ -58,11 +58,12 @@ vec3 tunnel(vec3 p)
     //dd *= 1.7;
     offset.x += 5.0 * sin(dd * 2.2 + 2.4) + 1.2 * cos(6.2 * dd + 2.2);
     offset.y += 4.0 * cos(dd * 2.75) + 0.2 * sin(dd * 8.25);
-    //offset.x += 8.0 * sin(dd * 2.2 + 4.4) * cos(2.2 * dd + 2.2);
-    //offset.y += 4.0 * cos(dd * 0.75 + 2.25);
 
     return offset;
 }
+
+// Lighting globals 
+vec3 light_pos = vec3(0.0, 0.0, -8.0);
 
 // distance field 
 float map(vec3 p) 
@@ -82,6 +83,8 @@ float map(vec3 p)
     // negative then we cut spheres from the "tunnel" by the radius 
     d2 = max(d2, -sphere(p3, 1.2));
 
+    // alternative tunnel interiors
+
     // other things...?
     vec3 p4 = p2;
     p4.xy *= rot(p4.z * 0.1);
@@ -89,8 +92,8 @@ float map(vec3 p)
     p4.x += 2.3 * sin(p4.y * 0.32);
     p4.z = repeat(p4.z, 10.0);      // repeat distance of cylinders
 
+
     return min(cylinder(p4.xz, 0.5), d2);
-    //return min(d2, cylinder(p4.xz, 0.3));
 }
 
 
@@ -117,6 +120,7 @@ void mainImage(out vec4 frag_color, in vec2 frag_coord)
 
     float fov = 1.1;
     vec3 r = normalize(cx * uv.x + cy * uv.y + cz * fov);
+    vec2 offset = vec2(0, 0.01);
 
     // set up renderer 
     vec3 p = s;
@@ -132,8 +136,18 @@ void mainImage(out vec4 frag_color, in vec2 frag_coord)
 
         p += r * d;         
     }
+
+    // adjust lighting 
+    vec3 n = normalize(map(p) - vec3(map(p - offset.xyy), map(p - offset.yxy), map(p - offset.yyx)));
+    light_pos.z -= advance;
+    light_pos -= tunnel(light_pos);
+    
+    vec3 l = normalize(light_pos - p);
+
     vec3 col = vec3(0.0);
-    col += pow(1.0 - i / 101.0, 6.0);
+    float fog = 8.0 / (1 + length(light_pos - p));
+    //col += pow(1.0 - i / 101.0, 6.0);
+    col += (dot(n, l) * 0.5 + 0.5) * fog;
     
     frag_color = vec4(col, 1.0);
 }

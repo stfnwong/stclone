@@ -69,7 +69,7 @@ vec3 tunnel(vec3 p)
 }
 
 // Lighting globals 
-vec3 light_pos = vec3(0.0, 0.0, -12.0);
+vec3 light_pos = vec3(4.0, 0.0, -12.0); //-12.0);
 float light = 0.0;
 
 // distance field 
@@ -89,17 +89,19 @@ float map(vec3 p)
     // are equal to the size of the second argument. If the sphere term is
     // negative then we cut spheres from the "tunnel" by the radius 
     d2 = max(d2, -sphere(p3, 1.2));
-    //d2 = min(d2, length(light_pos - p) - 0.5);
 
     // light 
     p2.z = repeat(p.z, 67.0);
     vec3 relative_pos = light_pos - p;
     float dl = length(relative_pos) - 0.5;
-    //float dl = length(light_pos - p) - 0.5;
     light += 1.0 / (0.2 + dl * dl);
+
     d2 = min(d2, dl);
     d2 = min(d2, max(-relative_pos.y, length(relative_pos.xz) - 0.3));
 
+
+    // draw a sphere at light_pos ?
+   
     // alternative tunnel interiors
     //float cc = abs(cylinder(p.xy, 11.1)) - 2.0;
     //cc = max(cc ,abs(d2) - 1.0);
@@ -111,7 +113,6 @@ float map(vec3 p)
     p4.x = abs(p4.x) - 4.0;
     p4.x += 2.3 * sin(p4.y * 0.32);
     p4.z = repeat(p4.z, 10.0);      // repeat distance of cylinders
-
 
     return min(cylinder(p4.xz, 0.5), d2);
 }
@@ -159,18 +160,23 @@ void mainImage(out vec4 frag_color, in vec2 frag_coord)
     }
 
     // this isn't quite the update that I wanted...
-    light_pos.z -= advance - 2.0;
+    //light_pos.z -= advance - 0.5 - tunnel(p).z;
+    //light_pos -= tunnel(p) + 2.0;
+    //light_pos.z -= advance - 0.5 - tunnel(p).x;
+
+    light_pos.z -= advance;
+    light_pos -= tunnel(light_pos);
 
     // adjust lighting 
     vec3 n = normalize(map(p) - vec3(map(p - offset.xyy), map(p - offset.yxy), map(p - offset.yyx)));
     //light_pos.z -= advance;
     //light_pos -= tunnel(light_pos);
 
-    vec3 light_pos_2 = light_pos;
-    light_pos_2 -= tunnel(light_pos_2) * 0.4;
+    //vec3 light_pos_2 = light_pos;
+    //light_pos_2 -= tunnel(light_pos_2) * 0.4;
     vec3 pl = p;
     pl.z = repeat(pl.z, 67.0);
-    vec3 l = normalize(light_pos_2 - p);
+    vec3 l = normalize(light_pos - p);
 
     float ao = clamp(map(p + n), 0.0, 1.0);
     
@@ -183,10 +189,8 @@ void mainImage(out vec4 frag_color, in vec2 frag_coord)
     col += (dot(n, l) * 0.5 + 0.5) * fog * fog_color * ao;
     col += light * light_color;
     
-    // mix another blue 
-    //col += vec3(0.22, 0.22, 0.99) * 0.05 * vec3(0.4, 0.5, 1.0);
+    // gamma correct
     col += pow(dd * 0.007, 2.0);
-    //col += pow(1.0 - i / 101.0, 30.0);
     col *= 1.2 - length(uv);
     col = 1.0 - exp(-col * 2.2);
 

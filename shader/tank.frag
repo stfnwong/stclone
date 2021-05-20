@@ -158,6 +158,9 @@ void mainImage(out vec4 frag_color, in vec2 frag_coord)
         dd += d;
     }
 
+    // this isn't quite the update that I wanted...
+    light_pos.z -= advance - 2.0;
+
     // adjust lighting 
     vec3 n = normalize(map(p) - vec3(map(p - offset.xyy), map(p - offset.yxy), map(p - offset.yyx)));
     //light_pos.z -= advance;
@@ -186,7 +189,7 @@ void mainImage(out vec4 frag_color, in vec2 frag_coord)
     //col += pow(1.0 - i / 101.0, 30.0);
     col *= 1.2 - length(uv);
     col = 1.0 - exp(-col * 2.2);
-    
+
     frag_color = vec4(col, 1.0);
 }
 

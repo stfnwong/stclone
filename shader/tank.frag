@@ -19,24 +19,30 @@ uniform vec4  i_mouse;
 
 
 // shapes
-float cyl(vec3 p, float s)
+float cyl(vec2 p, float s)
 {
     return length(p) - s;
 }
 
 float map(vec3 p) 
 {
-    return length(p) - 5.0;
+    vec3 p2 = p;
+    float dd = p2.z + i_time;
+    p2.x += sin(dd * 0.05) * 5.0;
+
+    return -cyl(p2.xy, 20.0);
 }
 
 
 void mainImage(out vec4 frag_color, in vec2 frag_coord)
 {
+    // TODO: something to center the image?
     // normalize pixel co-ords (from 0 to 1)
     //float ar = i_resolution.x / i_resolution.y;
-    //vec2 uv = frag_coord / i_resolution.xy;
+    vec2 uv = frag_coord / i_resolution.xy;
 
-    vec2 uv = vec2(frag_coord.x / i_resolution.x, frag_coord.y / i_resolution.y);
+    //vec2 uv = vec2(frag_coord.x / i_resolution.x, frag_coord.y / i_resolution.y);
+    //vec2 uv = 0.5 * (frag_coord / i_resolution.xy);
     uv -= 0.5;
     uv /= vec2(i_resolution.y / i_resolution.x, 1.0);
 
@@ -58,7 +64,7 @@ void mainImage(out vec4 frag_color, in vec2 frag_coord)
         p += r * d;         
     }
     vec3 col = vec3(0.0);
-    col += 1.0 - i / 101.0;
+    col += pow(1.0 - i / 101.0, 2.0);
     
     frag_color = vec4(col, 1.0);
 }

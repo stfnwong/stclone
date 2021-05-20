@@ -50,13 +50,13 @@ float repeat(float p, float s)
 }
 
 // area 
-vec3 tunnel2(vec3 p)
+vec3 tunnel(vec3 p)
 {
     vec3 offset = vec3(0.0);
     float dd = p.z * 0.02;
     dd = floor(dd) + smoothstep(0.0, 1.0, smoothstep(0.0, 1.0, fract(dd)));
     //dd *= 1.7;
-    offset.x += 5.0 * sin(dd * 2.2 + 2.4) + cos(6.2 * dd + 2.2);
+    offset.x += 5.0 * sin(dd * 2.2 + 2.4) + 1.2 * cos(6.2 * dd + 2.2);
     offset.y += 4.0 * cos(dd * 2.75) + 0.2 * sin(dd * 8.25);
     //offset.x += 8.0 * sin(dd * 2.2 + 4.4) * cos(2.2 * dd + 2.2);
     //offset.y += 4.0 * cos(dd * 0.75 + 2.25);
@@ -71,7 +71,7 @@ float map(vec3 p)
 
     // tunnel interior
     p2.z += i_time * 0.02;
-    p2 += tunnel2(p2);
+    p2 += tunnel(p2);
 
     float d2 = -cylinder(p2.xy, 10.0);
     // s parameter to repeat() is sort of like distance between repeats?
@@ -85,10 +85,12 @@ float map(vec3 p)
     // other things...?
     vec3 p4 = p2;
     p4.xy *= rot(p4.z * 0.1);
-    p4.x = abs(p4.x) - 8.0;
-    p4.z = repeat(p4.z, 20.0);
+    p4.x = abs(p4.x) - 4.0;
+    p4.x += 2.3 * sin(p4.y * 0.32);
+    p4.z = repeat(p4.z, 10.0);      // repeat distance of cylinders
 
-    return min(d2, cylinder(p4.xz, 0.3));
+    return min(cylinder(p4.xz, 0.5), d2);
+    //return min(d2, cylinder(p4.xz, 0.3));
 }
 
 
@@ -99,27 +101,22 @@ void mainImage(out vec4 frag_color, in vec2 frag_coord)
     uv -= 0.125;
     uv /= vec2(i_resolution.y / i_resolution.x, 1.0);
 
-    vec3 s = vec3(0, 0, -20);   
+    vec3 s = vec3(0, 0, 4);   
     vec3 t = vec3(0.0);
 
     float advance = i_time * 12.0;
     s.z -= advance;
     t.z -= advance;
-    s -= tunnel2(s);
-    t -= tunnel2(t);
+    s -= 0.75 * tunnel(s);
+    t -= tunnel(t);
 
     // normalization constants 
     vec3 cz = normalize(t - s);
     vec3 cx = normalize(cross(cz, vec3(0, 1, 0)));
     vec3 cy = normalize(cross(cz, cx));
 
-    float fov = 1.0;
+    float fov = 1.1;
     vec3 r = normalize(cx * uv.x + cy * uv.y + cz * fov);
-
-    //vec3 r = normalize(vec3(-uv, 4.0));
-    //s.z += i_time * 12.0;
-    //s -= tunnel2(s);
-    //s -= 0.5 * sin(tunnel2(s));
 
     // set up renderer 
     vec3 p = s;
@@ -136,7 +133,7 @@ void mainImage(out vec4 frag_color, in vec2 frag_coord)
         p += r * d;         
     }
     vec3 col = vec3(0.0);
-    col += pow(1.0 - i / 101.0, 4.0);
+    col += pow(1.0 - i / 101.0, 6.0);
     
     frag_color = vec4(col, 1.0);
 }

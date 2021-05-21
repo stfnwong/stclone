@@ -3,6 +3,7 @@
 */
 
 #version 330 core 
+//#define RENDER_MIST
 
 const int MAX_RAYMARCH_STEPS = 100;
 const float MIN_RAYMARCH_DIST = 0.001;
@@ -27,6 +28,11 @@ mat2 rot(float a)
     
     return mat2(ca, sa, -sa, ca);
 }
+// random numbers 
+float random(vec2 uv)
+{
+    return fract(dot(sin(uv * 752.322 + uv.yx * 653.842), vec2(254.652)));
+}
 
 // ======== SHAPES ======== //
 float cylinder(vec2 p, float s)
@@ -47,7 +53,6 @@ float box(vec3 p, vec3 s)
 // ======== COMPOSITIONS ======== //
 vec3 clump(vec3 p)
 {
-
     for(int i = 0; i < MAX_CLUMP_ITER; ++i)
     {
         float t = (0.5 * sin(i_time) + 0.5 + i_time)  * 0.25 + i;
@@ -64,9 +69,11 @@ vec3 clump(vec3 p)
 // an alternative clump algorithm
 vec3 clump2(vec3 p)
 {
+    const float rot_freq = 0.125;
+
     for(int i = 0; i < MAX_CLUMP_ITER; ++i)
     {
-        float t = (0.5 * sin(i_time) + 0.5 + i_time)  * 0.25 + i;
+        float t = (0.5 * sin(i_time) + 0.5 + i_time)  * rot_freq + i;
         p.xy *= rot(t * 1.414);
         p.yz *= rot(t * 0.7071);
 
@@ -124,7 +131,7 @@ void mainImage(out vec4 frag_color, in vec2 frag_coord)
 {
     vec2 uv = vec2(frag_coord.x / i_resolution.x, frag_coord.y / i_resolution.y);
     // fix center of screen 
-    uv -= 0.25;
+    uv -= 0.15;
     // fake move the screen a bit 
     //uv -= 0.25 - (0.5 + sin(i_time * 0.21));
     uv /= vec2(i_resolution.y / i_resolution.x, 1.0);
@@ -140,24 +147,37 @@ void mainImage(out vec4 frag_color, in vec2 frag_coord)
     vec3 p = s;
     int i = 0;
 
+    float factor = 0.9 + 0.1 * random(uv);
+
     for(i = 0; i < MAX_RAYMARCH_STEPS; ++i)
     {
         float d = map(p);
+        // adjust the distance calc 
+#ifdef RENDER_MIST
+        d = abs(max(d, -length(p - s) + 6.0));
+        d *= factor;
+#endif //RENDER_MIST
+
         if(d < MIN_RAYMARCH_DIST)
+#ifdef RENDER_MIST
+            d = 0.1;
+#else
             break;
+#endif // RENDER_MIST
         p += r * d;
     }
 
     vec3 col = vec3(0.0); 
     //col += pow(1.0 - i / 101.0, 16.0);
 
-    vec3 bg_col_1 = vec3(0.2, 0.5, 0.3);    
-    vec3 bg_col_2 = vec3(0.4, 0.0, 0.7);
+    float blue_component = 0.5 * sin(i_time * 0.1) + 0.5 - 0.32;
+    vec3 bg_col_1 = vec3(0.2, 0.5, blue_component);    
+    //vec3 bg_col_1 = vec3(0.2, 0.5, 0.44);    
+    vec3 bg_col_2 = vec3(0.5, 0.0, 0.7);
     //vec3 bg_col_2 = vec3(0.4, 1.0, 0.7);
     vec3 bg_col_3 = vec3(0.4, 0.5, 0.77);
 
-    vec3 bg = mix(bg_col_1, bg_col_2, pow(abs(r.z), 6.2));
-    //vec3 bg = mix(bg_col_1, bg_col_2, pow(r.z, 4.2));
+    vec3 bg = mix(bg_col_1, bg_col_2, pow(abs(r.z), 8.2));
     bg = mix(bg, bg_col_3, pow(abs(r.y), 8.0));
 
     col += pow(col_at * 0.022, 0.22) * bg;

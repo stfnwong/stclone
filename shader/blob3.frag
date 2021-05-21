@@ -55,7 +55,7 @@ vec3 clump(vec3 p)
 {
     const float rot_freq = 0.125;
     const float scale_freq = 0.0512;
-    const float particle_scale = 0.25;
+    const float particle_scale = 0.0025;
     float particle_dist = particle_scale * sin(i_time * scale_freq) + 1.1;
 
     for(int i = 0; i < MAX_CLUMP_ITER; ++i)
@@ -146,14 +146,12 @@ void mainImage(out vec4 frag_color, in vec2 frag_coord)
 #ifdef RENDER_MIST
         float dd = -length(p - s) + 4.0 * (0.5 * sin(i_time * 0.002) + 0.5);
         d = abs(max(d, dd));
-        //d = abs(max(d, -length(p - s) + 4.0));
-        //d = d * (0.25 + sin(i_time * 0.002) * 0.5 * (max(d, -length(p - s) + 4.0)));
         d *= factor;
 #endif //RENDER_MIST
 
         if(d < MIN_RAYMARCH_DIST)
 #ifdef RENDER_MIST
-            d = 0.0002;
+            d = 0.0004;
 #else
             break;
 #endif // RENDER_MIST

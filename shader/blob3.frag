@@ -54,7 +54,7 @@ float box(vec3 p, vec3 s)
 vec3 clump(vec3 p)
 {
     const float rot_freq = 0.125;
-    const float scale_freq = 0.0512;
+    const float scale_freq = 0.2512;
     const float particle_scale = 0.0025;
     float particle_dist = particle_scale * sin(i_time * scale_freq) + 1.1;
 
@@ -125,7 +125,7 @@ void mainImage(out vec4 frag_color, in vec2 frag_coord)
     uv /= vec2(i_resolution.y / i_resolution.x, 1.0);
 
     // camera position 
-    float cam_dist = 16.0;
+    float cam_dist = 12.0;
     vec3 s = vec3(0.0, 1.0, -cam_dist);
     vec3 r = normalize(vec3(-uv, 1.0));
     

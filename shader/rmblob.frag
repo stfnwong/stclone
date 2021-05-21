@@ -171,7 +171,7 @@ void mainImage(out vec4 frag_color, in vec2 frag_coord)
     //col += pow(1.0 - i / 101.0, 16.0);
 
     float blue_component = 0.5 * sin(i_time * 0.1) + 0.5 - 0.32;
-    vec3 bg_col_1 = vec3(0.2, 0.5, blue_component);    
+    vec3 bg_col_1 = vec3(0.2, 0.5, pow(blue_component, 0.2));    
     //vec3 bg_col_1 = vec3(0.2, 0.5, 0.44);    
     vec3 bg_col_2 = vec3(0.5, 0.0, 0.7);
     //vec3 bg_col_2 = vec3(0.4, 1.0, 0.7);
@@ -186,7 +186,7 @@ void mainImage(out vec4 frag_color, in vec2 frag_coord)
     col += 0.12 * bg * bg_mix;
     //col += col_at * 0.12 * bg;
     col += pow(col_buf_1 * 0.008, 1.2);
-    col += pow(col_buf_2 * 0.058, 2.2);
+    col += pow(col_buf_2 * 0.058, 2.2); //* bg;
     // change background "depth"?
     col *= 1.5 - length(uv);
 

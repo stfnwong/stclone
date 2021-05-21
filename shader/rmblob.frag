@@ -53,23 +53,10 @@ float box(vec3 p, vec3 s)
 // ======== COMPOSITIONS ======== //
 vec3 clump(vec3 p)
 {
-    for(int i = 0; i < MAX_CLUMP_ITER; ++i)
-    {
-        float t = (0.5 * sin(i_time) + 0.5 + i_time)  * 0.25 + i;
-        p.xy *= rot(t);
-        p.yz *= rot(t * 0.7071);
-
-        p = abs(p);     // mirror particles 
-        p -= 0.3;
-    }
-        
-    return p;
-}
-
-// an alternative clump algorithm
-vec3 clump2(vec3 p)
-{
     const float rot_freq = 0.125;
+    const float scale_freq = 0.12;
+    const float particle_scale = 2.1;
+    float particle_dist = particle_scale * (0.5 * sin(i_time * scale_freq) + 0.5) + 0.41;
 
     for(int i = 0; i < MAX_CLUMP_ITER; ++i)
     {
@@ -77,17 +64,19 @@ vec3 clump2(vec3 p)
         p.xy *= rot(t * 1.414);
         p.yz *= rot(t * 0.7071);
 
-        // twist it a bit 
-        //float dist = -22.0;
+        // Note: This distance is basically how far apart each repeat should
+        // be. At the edge of this distance we can see a ring artifact 
+        //float dist = -28.0;            
         //p = (fract(p / dist - 0.5) - 0.5) * dist;
         
         p = abs(p);
         // the smaller this number is, the more "compact" the resulting volume
-        p -= 1.2;       
+        p -= particle_dist;
     }
         
     return p;
 }
+
 
 // Color buffers
 float col_at = 0.0;
@@ -97,7 +86,7 @@ float col_buf_2 = 0.0;
 // ======== DISTANCE TO SCENE ======== //
 float map(vec3 p)
 {
-    vec3 p_clump = clump2(p);
+    vec3 p_clump = clump(p);
     vec3 box_dims = vec3(1.0, 0.2, 0.3);
 
     float d1 = box(p_clump, box_dims);
@@ -136,7 +125,11 @@ void mainImage(out vec4 frag_color, in vec2 frag_coord)
     //uv -= 0.25 - (0.5 + sin(i_time * 0.21));
     uv /= vec2(i_resolution.y / i_resolution.x, 1.0);
 
-    vec3 s = vec3(0.0, 1.0, -16.0);
+    //float camera_dist = -64.0;
+    float cam_zoom_freq = 0.02;
+    float cam_zoom_level = 12.0;
+    float moving_cam_dist = (0.5 * sin(i_time * cam_zoom_freq) + 0.5) - cam_zoom_level;
+    vec3 s = vec3(0.0, 1.0, moving_cam_dist);
     vec3 r = normalize(vec3(-uv, 1.0));
     
     // control camera from here rather than from map
@@ -147,7 +140,9 @@ void mainImage(out vec4 frag_color, in vec2 frag_coord)
     vec3 p = s;
     int i = 0;
 
-    float factor = 0.9 + 0.1 * random(uv);
+#ifdef RENDER_MIST
+    float factor = 0.6 + 0.1 * random(uv);
+#endif //RENDER_MIST
 
     for(i = 0; i < MAX_RAYMARCH_STEPS; ++i)
     {
@@ -160,7 +155,7 @@ void mainImage(out vec4 frag_color, in vec2 frag_coord)
 
         if(d < MIN_RAYMARCH_DIST)
 #ifdef RENDER_MIST
-            d = 0.1;
+            d = 0.001;
 #else
             break;
 #endif // RENDER_MIST
@@ -168,10 +163,10 @@ void mainImage(out vec4 frag_color, in vec2 frag_coord)
     }
 
     vec3 col = vec3(0.0); 
-    //col += pow(1.0 - i / 101.0, 16.0);
+    //col += pow(1.0 - i / 101.0, 8.0);
 
     float blue_component = 0.5 * sin(i_time * 0.1) + 0.5 - 0.32;
-    vec3 bg_col_1 = vec3(0.2, 0.5, pow(blue_component, 0.2));    
+    vec3 bg_col_1 = vec3(0.2, 0.5, pow(blue_component, 3.2));    
     //vec3 bg_col_1 = vec3(0.2, 0.5, 0.44);    
     vec3 bg_col_2 = vec3(0.5, 0.0, 0.7);
     //vec3 bg_col_2 = vec3(0.4, 1.0, 0.7);
@@ -183,12 +178,12 @@ void mainImage(out vec4 frag_color, in vec2 frag_coord)
     col += pow(col_at * 0.022, 0.22) * bg;
     // mix colours
     float bg_mix = 0.5 * sin(col_at) + 0.5;
-    col += 0.12 * bg * bg_mix;
+    //col += 0.12 * bg * bg_mix;
     //col += col_at * 0.12 * bg;
     col += pow(col_buf_1 * 0.008, 1.2);
     col += pow(col_buf_2 * 0.058, 2.2); //* bg;
     // change background "depth"?
-    col *= 1.5 - length(uv);
+    //col *= 1.5 - length(uv);
 
     col = 1.0 - exp(-col * 2.2);
     col = pow(col, vec3(1.2));

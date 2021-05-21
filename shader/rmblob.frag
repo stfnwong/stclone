@@ -49,7 +49,7 @@ vec3 clump(vec3 p)
 
     for(int i = 0; i < MAX_ITER; ++i)
     {
-        float t = i_time + 0.02 * i;
+        float t = (0.5 * sin(i_time) + 0.5 + i_time)  * 0.25 + i;
         p.xy *= rot(t);
         p.yz *= rot(t * 0.7071);
 
@@ -64,8 +64,10 @@ vec3 clump(vec3 p)
 float map(vec3 p)
 {
     vec3 p_clump = clump(p);
+    vec3 box_dims = vec3(1.0, 0.2, 0.3);
 
-    return length(p_clump) - 1.0;
+    return box(p_clump, box_dims);
+    //return length(p_clump) - 1.0;
 }
 
 
@@ -75,7 +77,7 @@ void mainImage(out vec4 frag_color, in vec2 frag_coord)
     uv += 0.5;
     uv /= vec2(i_resolution.y / i_resolution.x, 1.0);
 
-    vec3 s = vec3(0.0, 1.0, -8.0);
+    vec3 s = vec3(0.0, 1.0, -6.0);
     vec3 r = normalize(vec3(-uv, 1.0));
     
     // ray march / path trace loop

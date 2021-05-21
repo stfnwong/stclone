@@ -84,6 +84,8 @@ vec3 clump2(vec3 p)
 
 // Color buffers
 float col_at = 0.0;
+float col_buf_1 = 0.0;
+float col_buf_2 = 0.0;
 
 // ======== DISTANCE TO SCENE ======== //
 float map(vec3 p)

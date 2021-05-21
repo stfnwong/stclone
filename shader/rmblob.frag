@@ -71,12 +71,12 @@ vec3 clump2(vec3 p)
         p.yz *= rot(t * 0.7071);
 
         // twist it a bit 
-        float dist = -10.0;
+        float dist = -8.0;
         //p = (fract(p / dist - 0.5) - 0.5) * dist;
         p = abs(p);
 
-        // NOTE: larger than 1 we end up "inside" a volume, 
-        p -= 0.2;       
+        // the smaller this number is, the more "compact" the resulting volume
+        p -= 1.2;       
     }
         
     return p;
@@ -101,6 +101,9 @@ float map(vec3 p)
 
     // accumulate colors
     col_at += 0.13 / (0.13 / abs(d));
+
+    // what happens if color is accumulated based on another shape?
+    //float d_col = box(p_clump * vec3(0.4), vec3(2.2));
     col_buf_1 += 0.2 / (0.15 / abs(d1));
     col_buf_2 += 0.2 / (0.5 / abs(d2));
 
@@ -120,10 +123,13 @@ void camera(inout vec3 p)
 void mainImage(out vec4 frag_color, in vec2 frag_coord)
 {
     vec2 uv = vec2(frag_coord.x / i_resolution.x, frag_coord.y / i_resolution.y);
-    uv += 0.5;
+    // fix center of screen 
+    uv -= 0.25;
+    // fake move the screen a bit 
+    //uv -= 0.25 - (0.5 + sin(i_time * 0.21));
     uv /= vec2(i_resolution.y / i_resolution.x, 1.0);
 
-    vec3 s = vec3(0.0, 1.0, -6.0);
+    vec3 s = vec3(0.0, 1.0, -16.0);
     vec3 r = normalize(vec3(-uv, 1.0));
     
     // control camera from here rather than from map
@@ -143,22 +149,26 @@ void mainImage(out vec4 frag_color, in vec2 frag_coord)
     }
 
     vec3 col = vec3(0.0); 
-    //col += pow(1.0 - i / 101.0, 8.0);
+    //col += pow(1.0 - i / 101.0, 16.0);
 
-    vec3 bg_col_1 = vec3(0.0, 0.5, 0.3);    
-    vec3 bg_col_2 = vec3(0.4, 1.0, 0.7);
+    vec3 bg_col_1 = vec3(0.2, 0.5, 0.3);    
+    vec3 bg_col_2 = vec3(0.4, 0.0, 0.7);
+    //vec3 bg_col_2 = vec3(0.4, 1.0, 0.7);
     vec3 bg_col_3 = vec3(0.4, 0.5, 0.77);
 
-    vec3 bg = mix(bg_col_1, bg_col_2, pow(abs(r.z), 6.2));
-    bg = mix(bg, bg_col_3, pow(abs(r.y), 8.0));
+    //vec3 bg = mix(bg_col_1, bg_col_2, pow(abs(r.z), 6.2));
+    vec3 bg = mix(bg_col_1, bg_col_2, pow(r.z, 4.2));
+    //bg = mix(bg, bg_col_3, pow(abs(r.y), 8.0));
 
     //col += pow(col_at * 0.022, 0.22) * bg;
     // mix colours
-    col += col_at * 0.22 * bg;
+    float bg_mix = 0.5 * sin(col_at) + 0.5;
+    col += 0.12 * bg * bg_mix;
+    //col += col_at * 0.12 * bg;
     col += pow(col_buf_1 * 0.008, 1.2);
     col += pow(col_buf_2 * 0.058, 2.2);
     // change background "depth"?
-    //col *= 1.5 - length(uv);
+    col *= 1.5 - length(uv);
 
     col = 1.0 - exp(-col * 2.2);
     col = pow(col, vec3(1.2));

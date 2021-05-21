@@ -6,6 +6,7 @@
 
 const int MAX_RAYMARCH_STEPS = 100;
 const float MIN_RAYMARCH_DIST = 0.001;
+const int MAX_CLUMP_ITER = 5;
 
 // Uniforms
 in vec2 position_out;
@@ -43,11 +44,11 @@ float box(vec3 p, vec3 s)
 }
 
 
+// ======== COMPOSITIONS ======== //
 vec3 clump(vec3 p)
 {
-    const int MAX_ITER = 5;
 
-    for(int i = 0; i < MAX_ITER; ++i)
+    for(int i = 0; i < MAX_CLUMP_ITER; ++i)
     {
         float t = (0.5 * sin(i_time) + 0.5 + i_time)  * 0.25 + i;
         p.xy *= rot(t);
@@ -60,17 +61,60 @@ vec3 clump(vec3 p)
     return p;
 }
 
+// an alternative clump algorithm
+vec3 clump2(vec3 p)
+{
+    for(int i = 0; i < MAX_CLUMP_ITER; ++i)
+    {
+        float t = (0.5 * sin(i_time) + 0.5 + i_time)  * 0.25 + i;
+        p.xy *= rot(t * 1.414);
+        p.yz *= rot(t * 0.7071);
 
+        // twist it a bit 
+        float dist = 10.0;
+        //p = (fract(p / dist - 0.5) - 0.5) * dist;
+        p = abs(p);
+
+        // NOTE: larger than 1 we end up "inside" a volume, 
+        p -= 1.2;       
+    }
+        
+    return p;
+}
+
+// Color buffers
+float col_at = 0.0;
+
+// ======== DISTANCE TO SCENE ======== //
 float map(vec3 p)
 {
-    vec3 p_clump = clump(p);
+    vec3 p_clump = clump2(p);
     vec3 box_dims = vec3(1.0, 0.2, 0.3);
 
-    return box(p_clump, box_dims);
-    //return length(p_clump) - 1.0;
+    float d1 = box(p_clump, box_dims);
+    float d2 = box(p_clump, box_dims);
+
+    // final/output distance 
+    float d = max(abs(d1), abs(d2)) - 0.2;
+
+    // accumulate colors
+    col_at += 0.13 / (0.13 / abs(d));
+    col_buf_1 += 0.2 / (0.15 / abs(d1));
+    col_buf_2 += 0.2 / (0.5 / abs(d2));
+
+    return d;
+}
+
+// ======== CAMERA ======== //
+void camera(inout vec3 p)
+{
+    float t = i_time * 0.2;
+    p.yz *= rot(t * 1.141);
+    p.zx *= rot(t * 0.7071);
 }
 
 
+// ======== ENTRY POINT ======== //
 void mainImage(out vec4 frag_color, in vec2 frag_coord)
 {
     vec2 uv = vec2(frag_coord.x / i_resolution.x, frag_coord.y / i_resolution.y);
@@ -80,6 +124,10 @@ void mainImage(out vec4 frag_color, in vec2 frag_coord)
     vec3 s = vec3(0.0, 1.0, -6.0);
     vec3 r = normalize(vec3(-uv, 1.0));
     
+    // control camera from here rather than from map
+    camera(s);
+    camera(r);
+
     // ray march / path trace loop
     vec3 p = s;
     int i = 0;
@@ -93,8 +141,17 @@ void mainImage(out vec4 frag_color, in vec2 frag_coord)
     }
 
     vec3 col = vec3(0.0); 
-    col += pow(1.0 - i / 101.0, 8.0);
+    //col += pow(1.0 - i / 101.0, 8.0);
 
+    vec3 bg_col_1 = vec3(1.0, 0.5, 0.3);    
+    vec3 bg_col_2 = vec3(0.2, 1.0, 0.7);
+    vec3 bg_col_3 = vec3(0.4, 0.5, 0.77);
+
+    vec3 bg = mix(bg_col_1, bg_col_2, pow(abs(r.z), 8.0));
+    bg = mix(bg, bg_col_3, pow(abs(r.y), 8.0));
+
+    col += pow(col_at * 0.022, 0.22) * bg;
+    
     frag_color = vec4(col, 1.0);
 }
 

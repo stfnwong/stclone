@@ -30,6 +30,18 @@ float repeat(float p, float s)
 
 
 
+vec3 tunnel(vec3 p)
+{
+    vec3 offset = vec3(0.0);
+    float dd = p.z + i_time;
+
+    // controls the curvature of the tunnel in x and y
+    offset.x += 6.0 * sin(dd * 0.1); 
+    offset.y += 2.0 * cos(dd * 0.01 + 0.5); 
+
+    return offset;
+}
+
 
 // shapes 
 float cylinder(vec2 p, float s)
@@ -46,12 +58,8 @@ float sphere(vec3 p, float s)
 float map(vec3 p)
 {
     vec3 p2 = p;
-    float dd = p2.z + i_time;
-
-    // controls the curvature of the tunnel in x and y
-    p2.x += 6.0 * sin(dd * 0.1); 
-    p2.y += 2.0 * cos(dd * 0.01 + 0.5); 
-
+    p2.z += i_time * 3.0;
+    p2 += tunnel(p2);
 
     // returning the inverse of this shape puts us "inside" it
     float idist = -cylinder(p2.xy, 12.0);
@@ -69,6 +77,9 @@ void mainImage(out vec4 frag_color, in vec2 frag_coord)
 
     vec3 s = vec3(0.0, 0.0, -20.0);
     vec3 r = normalize(vec3(-uv, 1.0));
+
+    // shift starting position to match tunnel
+    s -= tunnel(s);
 
     // ray march / path trace loop
     vec3 p = s;

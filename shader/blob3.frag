@@ -3,7 +3,7 @@
 */
 
 #version 330 core 
-//#define RENDER_MIST
+#define RENDER_MIST
 
 const int MAX_RAYMARCH_STEPS = 100;
 const float MIN_RAYMARCH_DIST = 0.001;
@@ -54,9 +54,9 @@ float box(vec3 p, vec3 s)
 vec3 clump(vec3 p)
 {
     const float rot_freq = 0.125;
-    const float scale_freq = 0.12;
-    const float particle_scale = 2.1;
-    float particle_dist = particle_scale * (0.5 * sin(i_time * scale_freq) + 0.5) + 0.41;
+    const float scale_freq = 0.0512;
+    const float particle_scale = 0.25;
+    float particle_dist = particle_scale * sin(i_time * scale_freq) + 1.1;
 
     for(int i = 0; i < MAX_CLUMP_ITER; ++i)
     {
@@ -64,19 +64,18 @@ vec3 clump(vec3 p)
         p.xy *= rot(t * 1.414);
         p.yz *= rot(t * 0.7071);
 
-        // Note: This distance is basically how far apart each repeat should
-        // be. At the edge of this distance we can see a ring artifact 
-        //float dist = -28.0;            
+        // twist it a bit 
+        //float dist = -22.0;
         //p = (fract(p / dist - 0.5) - 0.5) * dist;
         
         p = abs(p);
         // the smaller this number is, the more "compact" the resulting volume
+        //p -= 1.2;           // spacing between iterations
         p -= particle_dist;
     }
         
     return p;
 }
-
 
 // Color buffers
 float col_at = 0.0;
@@ -125,11 +124,9 @@ void mainImage(out vec4 frag_color, in vec2 frag_coord)
     //uv -= 0.25 - (0.5 + sin(i_time * 0.21));
     uv /= vec2(i_resolution.y / i_resolution.x, 1.0);
 
-    //float camera_dist = -64.0;
-    float cam_zoom_freq = 0.02;
-    float cam_zoom_level = 12.0;
-    float moving_cam_dist = (0.5 * sin(i_time * cam_zoom_freq) + 0.5) - cam_zoom_level;
-    vec3 s = vec3(0.0, 1.0, moving_cam_dist);
+    // camera position 
+    float cam_dist = 16.0;
+    vec3 s = vec3(0.0, 1.0, -cam_dist);
     vec3 r = normalize(vec3(-uv, 1.0));
     
     // control camera from here rather than from map
@@ -140,22 +137,23 @@ void mainImage(out vec4 frag_color, in vec2 frag_coord)
     vec3 p = s;
     int i = 0;
 
-#ifdef RENDER_MIST
-    float factor = 0.6 + 0.1 * random(uv);
-#endif //RENDER_MIST
+    float factor = 0.98; // + (0.102 * random(uv));
 
     for(i = 0; i < MAX_RAYMARCH_STEPS; ++i)
     {
         float d = map(p);
         // adjust the distance calc 
 #ifdef RENDER_MIST
-        d = abs(max(d, -length(p - s) + 6.0));
+        float dd = -length(p - s) + 4.0 * (0.5 * sin(i_time * 0.002) + 0.5);
+        d = abs(max(d, dd));
+        //d = abs(max(d, -length(p - s) + 4.0));
+        //d = d * (0.25 + sin(i_time * 0.002) * 0.5 * (max(d, -length(p - s) + 4.0)));
         d *= factor;
 #endif //RENDER_MIST
 
         if(d < MIN_RAYMARCH_DIST)
 #ifdef RENDER_MIST
-            d = 0.001;
+            d = 0.0002;
 #else
             break;
 #endif // RENDER_MIST
@@ -163,28 +161,27 @@ void mainImage(out vec4 frag_color, in vec2 frag_coord)
     }
 
     vec3 col = vec3(0.0); 
-    //col += pow(1.0 - i / 101.0, 8.0);
+    //col += pow(1.0 - i / 101.0, 16.0);
 
     float blue_component = 0.5 * sin(i_time * 0.1) + 0.5 - 0.32;
-    vec3 bg_col_1 = vec3(0.2, 0.5, pow(blue_component, 3.2));    
-    vec3 bg_col_2 = vec3(0.4, 0.0, 0.8);
-    vec3 bg_col_3 = vec3(0.4, 0.6, 0.77);
+    vec3 bg_col_1 = vec3(0.2, 0.5, blue_component);    
+    vec3 bg_col_2 = vec3(0.5, 0.0, 0.7);
+    vec3 bg_col_3 = vec3(0.4, 0.5, 0.77);
 
-    vec3 bg = mix(bg_col_1, bg_col_2, pow(abs(r.z), 8.2));
+    vec3 bg = mix(bg_col_1, bg_col_2, pow(abs(r.z), 6.2));
     bg = mix(bg, bg_col_3, pow(abs(r.y), 8.0));
 
     col += pow(col_at * 0.022, 0.22) * bg;
     // mix colours
     float bg_mix = 0.5 * sin(col_at) + 0.5;
-    //col += 0.12 * bg * bg_mix;
-    col += col_at * 0.12 * bg * sin(i_time * 0.002);
+    col += col_at * 0.012 * bg;
     col += pow(col_buf_1 * 0.008, 1.2);
-    col += pow(col_buf_2 * 0.058, 2.4); //* bg;
+    col += pow(col_buf_2 * 0.058, 2.2);
     // change background "depth"?
     //col *= 1.5 - length(uv);
 
-    col = 1.0 - exp(-col * 1.1);
-    col = pow(col, vec3(1.2));
+    col = 1.0 - exp(-col * 1.8);
+    col = pow(col, vec3(7.2));
     
     frag_color = vec4(col, 1.0);
 }

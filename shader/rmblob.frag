@@ -71,10 +71,10 @@ vec3 clump2(vec3 p)
         p.yz *= rot(t * 0.7071);
 
         // twist it a bit 
-        float dist = -8.0;
+        //float dist = -22.0;
         //p = (fract(p / dist - 0.5) - 0.5) * dist;
+        
         p = abs(p);
-
         // the smaller this number is, the more "compact" the resulting volume
         p -= 1.2;       
     }
@@ -156,11 +156,11 @@ void mainImage(out vec4 frag_color, in vec2 frag_coord)
     //vec3 bg_col_2 = vec3(0.4, 1.0, 0.7);
     vec3 bg_col_3 = vec3(0.4, 0.5, 0.77);
 
-    //vec3 bg = mix(bg_col_1, bg_col_2, pow(abs(r.z), 6.2));
-    vec3 bg = mix(bg_col_1, bg_col_2, pow(r.z, 4.2));
-    //bg = mix(bg, bg_col_3, pow(abs(r.y), 8.0));
+    vec3 bg = mix(bg_col_1, bg_col_2, pow(abs(r.z), 6.2));
+    //vec3 bg = mix(bg_col_1, bg_col_2, pow(r.z, 4.2));
+    bg = mix(bg, bg_col_3, pow(abs(r.y), 8.0));
 
-    //col += pow(col_at * 0.022, 0.22) * bg;
+    col += pow(col_at * 0.022, 0.22) * bg;
     // mix colours
     float bg_mix = 0.5 * sin(col_at) + 0.5;
     col += 0.12 * bg * bg_mix;

@@ -22,14 +22,24 @@ vec3 repeat(vec3 p, vec3 s)
 {
     return (fract(p / s - 0.5) - 0.5) * s;
 }
-
+vec2 repeat(vec2 p, vec2 s)
+{
+    return (fract(p/s - 0.5) - 0.5) * s;
+}
 float repeat(float p, float s) 
 {
     return (fract(p/s - 0.5) - 0.5) * s;
 }
 
 
-
+// math functions
+mat2 rot(float a) 
+{
+    float ca = cos(a);
+    float sa = sin(a);
+    
+    return mat2(ca, sa, -sa, ca);
+}
 
 
 // shapes 
@@ -40,6 +50,11 @@ float cylinder(vec2 p, float s)
 float sphere(vec3 p, float s)
 {
     return length(p) - s;
+}
+float box(vec3 p, vec3 s)
+{
+    p = abs(p) - s;
+    return max(p.x, max(p.y, p.z));
 }
 
 // Compute interior of tunnel
@@ -58,15 +73,35 @@ vec3 tunnel(vec3 p)
 // Scene entry point
 float map(vec3 p)
 {
-    vec3 p2 = p;
-    p2 += tunnel(p2);
+    vec3 tunnel_point = p;
+    tunnel_point += tunnel(tunnel_point);
 
     // returning the inverse of this shape puts us "inside" it
-    float idist = -cylinder(p2.xy, 12.0);
-    vec3 ipoint = repeat(p2, vec3(2.0));
+    float idist = -cylinder(tunnel_point.xy, 12.0);
+    vec3 ipoint = repeat(tunnel_point, vec3(2.0));        // interior point
 
     // let d be the final distance for this ray
-    float d = max(idist, -sphere(ipoint, 1.2));
+    float d;
+    d = max(idist, -sphere(ipoint, 1.2));
+
+    // cylinders 
+    vec3 pc = tunnel_point;
+    pc.xy *= rot(pc.z * -0.04);
+    pc.x = abs(pc.x) - 3.0;
+    pc.z = repeat(pc.z, 10.0);
+    // add turns to cylinder position
+    pc.x += 2.0 * sin(pc.y * 0.40);
+    pc.z += 1.2 * cos(pc.z * 0.4);
+
+    // change these into polar coords
+    vec3 pp = tunnel_point;
+    pp.x = atan(tunnel_point.y, tunnel_point.x) * 10.0 / 3.141592;
+    pp.y = length(tunnel_point.xy) - 10.0;
+    pp.xz = repeat(pp.xz, vec2(5.0, 6.0));
+
+    d = min(d, box(pp, vec3(1.0)));
+
+    d = min(d, cylinder(pc.xz, 0.5));
 
     return d;
 }

@@ -1,6 +1,10 @@
-# Ignore swap files 
+# Ignore vim swap files 
 *.swo
 *.swp
+
+# Ignore emacs swap files 
+*~
+
 # Ignore object files 
 *.o
 # Ignore tags 

@@ -65,7 +65,10 @@ float map(vec3 p)
     float idist = -cylinder(p2.xy, 12.0);
     vec3 ipoint = repeat(p2, vec3(2.0));
 
-    return max(idist, -sphere(ipoint, 1.2));
+    // let d be the final distance for this ray
+    float d = max(idist, -sphere(ipoint, 1.2));
+
+    return d;
 }
 
 
@@ -76,11 +79,22 @@ void mainImage(out vec4 frag_color, in vec2 frag_coord)
     uv /= vec2(i_resolution.y / i_resolution.x, 1.0);
 
     vec3 s = vec3(0.0, 1.0, -20.0);
-    vec3 r = normalize(vec3(-uv, 1.0));
-
-    // shift starting position to match tunnel
-    s.z += i_time * 12.0;
+    vec3 t = vec3(0.0, 0.0, 0.0);
+    
+    // compute the target position for the camera 
+    float advance = i_time * 8.0;
+    s.z += advance;
+    t.z += advance;
     s -= tunnel(s);
+    t -= tunnel(t);
+
+    // now compute the ray direction 
+    vec3 cz = normalize(t - s);         // ray direction towards  the target from the starting point
+    vec3 cx = normalize(cross(cz, vec3(0.0, 1.0, 0.0)));
+    vec3 cy = normalize(cross(cz, cx));
+
+    float fov = 1.0;
+    vec3 r = normalize(cx * uv.x + cy * uv.y + cz * fov);
 
     // ray march / path trace loop
     vec3 p = s;
@@ -97,7 +111,6 @@ void mainImage(out vec4 frag_color, in vec2 frag_coord)
     vec3 col = vec3(0.0); 
     col += pow(1.0 - i / 101.0, 8.0);
 
-    // normalize pixel co-ords (from 0 to 1)
     frag_color = vec4(col, 1.0);
 }
 

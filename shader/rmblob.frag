@@ -71,12 +71,12 @@ vec3 clump2(vec3 p)
         p.yz *= rot(t * 0.7071);
 
         // twist it a bit 
-        float dist = 10.0;
+        float dist = -10.0;
         //p = (fract(p / dist - 0.5) - 0.5) * dist;
         p = abs(p);
 
         // NOTE: larger than 1 we end up "inside" a volume, 
-        p -= 1.2;       
+        p -= 0.2;       
     }
         
     return p;
@@ -145,14 +145,23 @@ void mainImage(out vec4 frag_color, in vec2 frag_coord)
     vec3 col = vec3(0.0); 
     //col += pow(1.0 - i / 101.0, 8.0);
 
-    vec3 bg_col_1 = vec3(1.0, 0.5, 0.3);    
-    vec3 bg_col_2 = vec3(0.2, 1.0, 0.7);
+    vec3 bg_col_1 = vec3(0.0, 0.5, 0.3);    
+    vec3 bg_col_2 = vec3(0.4, 1.0, 0.7);
     vec3 bg_col_3 = vec3(0.4, 0.5, 0.77);
 
-    vec3 bg = mix(bg_col_1, bg_col_2, pow(abs(r.z), 8.0));
+    vec3 bg = mix(bg_col_1, bg_col_2, pow(abs(r.z), 6.2));
     bg = mix(bg, bg_col_3, pow(abs(r.y), 8.0));
 
-    col += pow(col_at * 0.022, 0.22) * bg;
+    //col += pow(col_at * 0.022, 0.22) * bg;
+    // mix colours
+    col += col_at * 0.22 * bg;
+    col += pow(col_buf_1 * 0.008, 1.2);
+    col += pow(col_buf_2 * 0.058, 2.2);
+    // change background "depth"?
+    //col *= 1.5 - length(uv);
+
+    col = 1.0 - exp(-col * 2.2);
+    col = pow(col, vec3(1.2));
     
     frag_color = vec4(col, 1.0);
 }

@@ -1,6 +1,5 @@
 /*
-Some fucking thing 
-
+    There is no sense in which this is a tank
 */
 
 #version 330 core 

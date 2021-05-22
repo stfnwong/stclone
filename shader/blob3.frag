@@ -53,7 +53,7 @@ float box(vec3 p, vec3 s)
 // ======== COMPOSITIONS ======== //
 vec3 clump(vec3 p)
 {
-    const float rot_freq = 0.125;
+    const float rot_freq = 0.0125;
     const float scale_freq = 0.2512;
     const float particle_scale = 0.0025;
     float particle_dist = particle_scale * sin(i_time * scale_freq) + 1.1;

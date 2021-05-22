@@ -8,7 +8,7 @@
 /*
  * create_window()
  */
-SDL_Window* create_window(const char* window_title)
+SDL_Window* create_window(const char* window_title, int width, int height)
 {
     SDL_Init(SDL_INIT_VIDEO);
     SDL_GL_SetSwapInterval(1);
@@ -17,7 +17,7 @@ SDL_Window* create_window(const char* window_title)
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
     SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
 
-    return SDL_CreateWindow(window_title, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, DISP_W, DISP_H, SDL_WINDOW_OPENGL);
+    return SDL_CreateWindow(window_title, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, width, height, SDL_WINDOW_OPENGL);
 }
 
 /*

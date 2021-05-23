@@ -57,13 +57,16 @@ float fbm(in vec2 st)
     vec2 shift = vec2(100.0);
     mat2 rot = rotate(0.5);
 
+    float a_factor = 0.25 * (0.5 * sin(i_time * 0.125) + 0.5) + 0.25;
+
     // start combining waves 
     for(int i = 0; i < NUM_OCTAVES; ++i)
     {
         // reduce axial bias with rotations 
         value += amp * noise(st);
         st = rot * st * 2.0 + shift;      // next octave
-        amp *= 0.5;     // dampen higher frequency components
+        amp *= a_factor;
+        //amp *= 0.25;     // dampen higher frequency components
     }
 
     return value;
@@ -83,16 +86,21 @@ float rand(vec3 s) {
                  fract(s.z*32.924)*8. + fract(s.z*296.234))*98.397 );*/
 }
 
+vec3 desaturate(vec3 col)
+{
+    float bw = (min(col.r, min(col.g, col.b))) + (max(col.r, max(col.g, col.b))) * 0.5;
+    return vec3(bw, bw, bw);
+}
+
 // this is just some placeholder garbage for now 
 vec3 color_function(in vec3 x)
 {
-    float a = rand(x * 0.4  + 0.5);
-	float b = rand(x * 1.2  + 1.2);
+    float a = rand(x * 0.4  + 0.25);
+	float b = rand(x * 0.32  + 0.4);
 	float c = rand(x * 0.21 + 0.22);
 
 	return vec3(a, b, c);
 }
-
 
 void mainImage( out vec4 frag_color, in vec2 frag_coord )
 {
@@ -112,10 +120,11 @@ void mainImage( out vec4 frag_color, in vec2 frag_coord )
     for (int i = 0; i < NUM_ITERATIONS; i++) {
         vec3 hp = rp+rd*s;
         
-        float a = (.09+0.02*rand(hp*.09127));
+        float a = (0.09+0.02*rand(hp*0.09127));
         float b = fbm(hp.xy);
         //float xx = a * 1.77 * b;
-        float fade = 1.0 * pow(normalize(length(hp)), 0.2); // - pow(fract(length(hp)), 0.444 * sin(i_time) * 0.25);
+        //float fade = 1.0 * pow(normalize(length(hp)), 0.12); // - pow(fract(length(hp)), 0.444 * sin(i_time) * 0.25);
+        float fade = 1.0;
         float xx = b * fade;
         
         //color sample at point
@@ -123,12 +132,15 @@ void mainImage( out vec4 frag_color, in vec2 frag_coord )
         float cc = xx*mix(10.0,0.0,float(i)/128.0) * pow(xx, 1.25) * (float(i) / 30.0);
 
 		c += color_function(hp.xyx * hp.zzz) * cc * 0.1; // * sin((hp.yx + hp.z * 3.0) * 0.25)).xyz * cc * 0.1;
+        //c += color_function(vec3(tex_pos, cc)); 
         // TODO : need a real texture sampler here.....
         //c += texture(iChannel0,tex_pos).xyz*cc*0.1;
         //c += texture(iChannel0,(hp.xy+hp.zz*sin((hp.yx+hp.z*3.)*0.25)*.035)*0.15).xyz*cc*0.1;
         //step ray forward
         s += a;
     }
+
+    c = pow(c, vec3(0.9 * sin(i_time * 0.01) + 0.12));
     
     frag_color = vec4(pow(c,vec3(4.)),1.);
 }

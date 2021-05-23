@@ -4,6 +4,7 @@
 
 #version 330 core 
 #define RENDER_MIST
+#define EXTRA_BOX_ROTATION
 
 const int MAX_RAYMARCH_STEPS = 100;
 const float MIN_RAYMARCH_DIST = 0.001;
@@ -58,11 +59,20 @@ vec3 clump(vec3 p)
     const float particle_scale = 0.0025;
     float particle_dist = particle_scale * sin(i_time * scale_freq) + 1.1;
 
+#ifdef EXTRA_BOX_ROTATION
+    float rot_factor = 1.5 * sin(i_time * 0.00777) + 0.25;
+#endif /*EXTRA_BOX_ROTATION*/
+
     for(int i = 0; i < MAX_CLUMP_ITER; ++i)
     {
         float t = (0.5 * sin(i_time) + 0.5 + i_time)  * rot_freq + i;
+#ifdef EXTRA_BOX_ROTATION
+        p.xy *= rot(t * 1.414 * (rot_factor * sin(i_time * 0.01) + 1.25));
+        p.yz *= rot(t * 0.7071 * (rot_factor * cos(i_time * 0.01) + 1.2));
+#else
         p.xy *= rot(t * 1.414);
         p.yz *= rot(t * 0.7071);
+#endif /*EXTRA_BOX_ROTATION*/
 
         // twist it a bit 
         //float dist = -22.0;

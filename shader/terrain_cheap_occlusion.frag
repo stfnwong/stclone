@@ -381,8 +381,6 @@ void mainImage(out vec4 frag_color, in vec2 frag_coord)
 }
 
 
-
-
 void main(void)
 {
     mainImage(out_color, (0.5 + 0.5 * position_out) * i_resolution.xy);

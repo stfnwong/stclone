@@ -77,6 +77,20 @@ float displacement( vec3 p )
 
 
 
+// ======== MATERIAL FUNCTIONS ======== //
+// Oren-Nayar
+float diffuse( in vec3 l, in vec3 n, in vec3 v, float r )
+{
+    float r2 = r*r;
+    float a = 1.0 - 0.5*(r2/(r2+0.57));
+    float b = 0.45*(r2/(r2+0.09));
+    float nl = dot(n, l);
+    float nv = dot(n, v);
+    float ga = dot(v-n*nv,n-n*nl);
+	return max(0.0,nl) * (a + b*max(0.0,ga) * sqrt((1.0-nv*nv)*(1.0-nl*nl)) / max(nl, nv));
+}
+
+
 // ======== TERRAIN FUNCTIONS ======== //
 float terrain(in vec2 q)
 {
@@ -117,6 +131,18 @@ vec4 raycast(in vec3 ro, in vec3 rd, in float tmax)
     }
 
     return vec4(t, res);
+}
+
+// find normala of the map by method of differences 
+vec3 calc_normal(in vec3 pos, float t)
+{
+    vec2 eps = vec2(0.005 * t, 0.0);
+    return normalize(vec3(
+        map(pos + eps.xyy).x - map(pos - eps.xyy).x,
+        map(pos + eps.yxy).x - map(pos - eps.yxy).x,
+        map(pos + eps.yyx).x - map(pos - eps.yyx).x,
+        )
+    );
 }
 
 // ======== CAMERA FUNCTIONS ======== //
@@ -196,8 +222,19 @@ void mainImage(out vec4 frag_color, in vec2 frag_coord)
     
 
     vec4 tmat = raycast(ro, rd, tmax);
-    // TODO: material color    
+    if(tmat.x < tmax)
+    {
+        // geometry 
+        vec3 pos = ro + tmat.x * rd;
+        vec3 nor = calc_normal(pos, tmat.x);
+        // TODO: reflections 
 
+        float occ = smoothstep(0.0, 1.5, pos.y + 11.5) + (1.0 - displacement(0.25 * pos * vec3(1.0, 4.0, 1.0)));
+        
+        // materials 
+        vec3 material = vec4(0.5, 0.5, 0.5, 0.0);
+    }
+    
 
     frag_color = vec4(col, 1.0);
 }

@@ -23,9 +23,9 @@ const vec3 LIGHT_COLOR = normalize(vec3(0.950, 0.619, 0.180));
 // fog emulation
 const float FOG_HEIGHT = 0.01;     // height of background fog
 const float FOG_FADE_HEIGHT = 0.2; // fade the fog into the background (ie: "sky") at this height
-const vec3 FOG_COLOR = vec3(0.9774, 0.7345, 0.655);     // color of the fog
+const vec3 FOG_COLOR = vec3(0.9774, 0.7345, 0.655);     
 
-// Random noise generator 
+// noise generator 
 float random(in vec2 st) { 
     return fract(sin(dot(st.xy, vec2(12.9898,78.233))) * 43758.5453123);
 }
@@ -62,7 +62,7 @@ float fbm(vec2 st) {
 		val += amp * noise_2d(st * freq);
 		st *= 2.0;
 		amp *= 0.5;
-		freq *= 1.22;
+		freq *= 1.02;
 	}
 
 	return val;
@@ -92,7 +92,7 @@ mat3 rotate_y(float n) {
 float terrain(vec2 st) {
 	float a = fbm(st.xy * 1.9) + 1.0;
 
-	a = abs(1.0 - a) * 17.5 - 4.0;
+	a = abs(1.0 - a) * 15.5 - 2.0;
 	float b = fbm(st.yx * 33.333);
 	float v = a - b * (a * 0.2);
 
@@ -184,12 +184,12 @@ float fog(float dist) {
 void mainImage(out vec4 frag_color, in vec2 frag_coord)
 {
 	vec2 st = frag_coord.xy / i_resolution.xy;
-	float finv = tan(90.0 * 0.5 * PI / 180.0);     // inverse of fov?
+	float finv = tan(60.0 * 0.25 * PI / 180.0);     // inverse of fov?
 
 	float aspect = i_resolution.x / i_resolution.y;
 
-	st.x = st.x * aspect;
-	st = (st - vec2(aspect * 0.5, 0.5)) * finv;
+	st.x = 2.0 * st.x * aspect;
+	st = (st - vec2(aspect * 0.2, 1.0)) * finv;
 
 	vec3 rd = normalize(vec3(st, 1.0));
 	rd = rotate_y(0.0002 * 0.7853) * rotate_x(0.001 - 0.19) * rd;

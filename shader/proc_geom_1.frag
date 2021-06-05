@@ -46,8 +46,8 @@ vec3 albedo;            // albedo base color
 vec3 fog;
 vec3 col;
 
-// accent for lights
-#define laccent(d) clamp(map(po + no * d).x / d, 0.0, 1.0)
+// ao
+#define lambient(d) clamp(map(po + no * d).x / d, 0.0, 1.0)
 // smoothing for lights 
 #define lsmooth(d) smoothstep(0.0, 1.0, map(po + light_dir * d).x / d)
 
@@ -77,7 +77,7 @@ vec2 geom(vec3 p, float m)      // m - material
     h = vec2(box(p + vec3(0.0, 0.4, 0.0), vec3(5.4, 0.4, 3.4)), m);
     h.x = max(h.x, -(length(p) - 2.5));
     t = (t.x < h.x) ? t : h;        
-    t.x *= 0.8;
+    t.x *= 0.2;
 
     return t;
 }
@@ -86,21 +86,23 @@ vec2 geom(vec3 p, float m)      // m - material
 vec2 map(in vec3 p)
 {
     vec2 h, t = vec2(10000.0, 0.0);
-    prev_pos = p;
+    new_pos = p;
     base_pos = p;
 
     // do some rotations
     for(int i = 0; i < 4; ++i)
     {
-        prev_pos.xy *= rotate(1.57 * st);     // 
-        prev_pos.xyz = abs(prev_pos.xyz) - mix(vec3(0.0, 3.0, 6.0), vec3(0.0, 10.0, 2.0), st);
-        prev_pos *= 1.4;
-        prev_pos.xz *= rotate(0.785 * (1.0 - st));
+        new_pos.xy *= rotate(sin(p.z * 0.2) * 1.57 * st);     // 
+        new_pos.xyz = abs(new_pos.xyz) - mix(vec3(0.0, 3.0, 6.0), vec3(0.0, 10.0, 2.0), st);
+        new_pos *= 1.2;
+        new_pos.xz *= rotate(0.785 * (1.0 - st));
+        h = geom(new_pos.xyz, 4.0);
+        h.x /= new_pos.z;
         t = (t.x < h.x) ? t : h;
     }
 
-    t = geom(p, 2.0);
-    np = prev_pos.xyz;
+    t = geom(new_pos, 2.0);         // do one more 
+    np = new_pos.xyz;
     p.xy *= rotate(cos(p.z * 1.4 * mod_time * 10.0) * 0.5 * mod_time * 5.0);
     h = vec2(length(p - vec3(cos(p.z * 24) * 0.05 + cos(p.x), 0.0, 0.0)) - 5.0 * st, 6.0);
     h.x *= 0.5;
@@ -142,14 +144,14 @@ void mainImage(out vec4 frag_color, in vec2 frag_coord)
     mod_time = mod(i_time, 62.8318);
 
     // ray position 
-    vec3 ro = vec3(20.0, 1.0, cos(mod_time) * 10.0); 
+    vec3 ro = vec3(20.0, 4.0, 2.0 - cos(0.24 * mod_time) * 10.0); 
     // camera 
     vec3 cw = normalize(vec3(0.0) - ro);
     vec3 cu = normalize(cross(cw, vec3(0.0, 1.0, 0.0)));
     vec3 cv = normalize(cross(cu, cw));
 
     // ray direction 
-    vec3 rd = mat3(cu, cv, cw) * normalize(vec3(uv, 0.5));
+    vec3 rd = mat3(cu, cv, cw) * normalize(vec3(uv, 1.5));
 
     scene_dist = trace(ro, rd);
     t = scene_dist.x;
@@ -157,7 +159,8 @@ void mainImage(out vec4 frag_color, in vec2 frag_coord)
     col = vec3(0.1, 0.2, 0.3) - length(uv) * 0.1 * rd.y * 2.0;
     fog = col * 1.2;
 
-    if(t > 0)
+    // hit test
+    if(scene_dist.y > 0)
     {
         po = ro + rd * t;
         no = normalize(
@@ -168,17 +171,18 @@ void mainImage(out vec4 frag_color, in vec2 frag_coord)
         );
 
         albedo        = mix(vec3(0.1, 0.2, 0.4), vec3(0.1, 0.4, 0.77), 0.5 + 0.5 * sin(base_pos.y * 6.9));
+        if(scene_dist.y > 3.0)
+            albedo = vec3(1.0, 0.77, 0.1);
         float diffuse = max(0.0, dot(no, light_dir));
         float fresnel = pow(1.0 + dot(no, rd), 4.0);
         float spec    = pow(max(dot(reflect(-light_dir, no), -rd), 0.0), 40.0);
-        col = mix(spec + mix(vec3(0.8), vec3(1.0), abs(rd)) * albedo * (diffuse + lsmooth(2.0)), fog, min(fresnel, 0.2));                
-        col = mix(fog, col, exp(-0.0003 * t * t * t));          // soften with fog
+        col = mix(spec + mix(vec3(0.8), vec3(1.0), abs(rd)) * albedo * (lambient(0.2) * lambient(0.1) + 0.2) * (diffuse + lsmooth(2.0)), fog, min(fresnel, 0.2));                
+        col = mix(fog, col, exp(-0.0002 * t * t * t));          // soften with fog
     }
 
     vec3 final_col = pow(col + glow * 2.0 + glow2 * mix(vec3(1.0, 0.5, 0.0), vec3(0.9, 0.3, 0.1), 0.5 + 0.5 * sin(base_pos.y * 3.0)), vec3(0.55));
 
     frag_color = vec4(final_col, 1.0);
-    //frag_color = vec4(vec3(scene_dist.x, scene_dist.y, 1.0), 1.0);
 }
 
 

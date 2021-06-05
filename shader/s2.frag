@@ -123,8 +123,8 @@ void mainImage( out vec4 frag_color, in vec2 frag_coord )
         float a = (0.09+0.02*rand(hp*0.09127));
         float b = fbm(hp.xy);
         //float xx = a * 1.77 * b;
-        //float fade = 1.0 * pow(normalize(length(hp)), 0.12); // - pow(fract(length(hp)), 0.444 * sin(i_time) * 0.25);
-        float fade = 1.0;
+        float fade = 1.0 * pow(normalize(length(hp)), 0.22); // - pow(fract(length(hp)), 0.444 * sin(i_time) * 0.25);
+        //float fade = 1.0;
         float xx = b * fade;
         
         //color sample at point

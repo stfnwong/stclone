@@ -93,10 +93,12 @@ mat3 rotate_y(float n) {
 
 // Height function for terrain
 float terrain(vec2 st) {
-	float a = fbm(st.xy * 1.9) + 1.0;
+	//float a = fbm(st.xy * 1.9) + 1.0;
 
+    float a = noise_2d(st.xy * 1.9) + 1.0;
 	a = abs(1.0 - a) * 15.5 - 2.0;
-	float b = fbm(st.yx * 33.333);
+	///float b = fbm(st.yx * 33.333);
+    float b = noise_2d(st.yx * 33.3333);
 	float v = a - b * (a * 0.2);
 
 	return v;
@@ -148,31 +150,6 @@ vec4 intersect(in vec3 ro, in vec3 rd, in float tmax)
     return vec4(t, res);
 }
 
-// Raymarching loop
-vec2 raymarch(vec3 ro, vec3 rd, out int mat_type) {
-	float height = -1.0;
-	float t = 0.02;
-	float tmax = MAX_LENGTH;
-    float eps = 0.001;
-
-	for(;t <  tmax;) {
-		int m = 0;
-		vec3 rp = ro + rd * t;
-		//float h = terrain(rp.xz, m);
-		float h = terrain(rp.xz);
-		float d = rp.y - h;
-
-		if(d < 0.01) {
-			height = h;
-			mat_type = m;
-			break;
-		}
-
-		t += 0.5 * d;
-	}
-
-	return vec2(height, t);
-}
 
 // fake soft shadow 
 float soft_shadow(in vec3 ro, in vec3 rd, float tmin, float k)
@@ -220,24 +197,25 @@ float diffuse( in vec3 l, in vec3 n, in vec3 v, float r )
 }
 
 // shadow
-vec3 get_shading(vec3 p, vec3 ld, vec3 n) {
-	int unused;
-
-	// lambertian
-	float kd = max(0.0, dot(-ld, n));
-	// now cast a shadow ray
-	vec3 a = p + vec3(0.0, 1.0, 0.0);
-	//vec2 s = terrain(a, -LIGHT_DIRECTION, unused);
-	vec2 s = raymarch(a, -LIGHT_DIRECTION, unused);
-	float sh = (s.x == -1.0) ? 1.0 : 0.0;
-
-	return (kd * LIGHT_COLOR * sh);
-}
+//vec3 get_shading(vec3 p, vec3 ld, vec3 n) {
+//	int unused;
+//
+//	// lambertian
+//	float kd = max(0.0, dot(-ld, n));
+//	// now cast a shadow ray
+//	vec3 a = p + vec3(0.0, 1.0, 0.0);
+//	vec2 s = terrain(a, -LIGHT_DIRECTION, unused);
+//	//vec2 s = raymarch(a, -LIGHT_DIRECTION, unused);
+//	float sh = (s.x == -1.0) ? 1.0 : 0.0;
+//
+//	return (kd * LIGHT_COLOR * sh);
+//}
 
 vec3 sky(vec3 ro, vec3 rd, vec2 st) {
 	vec3 col = vec3(0.6, 0.8, 0.77);
 
-	col += smoothstep(0.3, 0.6, fbm(rd.xz * 90.0 / rd.y));
+    // why do I want noise here?
+	//col += smoothstep(0.3, 0.6, fbm(rd.xz * 90.0 / rd.y));
 
 	// simulate a light
 	float d = dot(-LIGHT_DIRECTION, rd);
@@ -280,68 +258,76 @@ void mainImage(out vec4 frag_color, in vec2 frag_coord)
 
 	int mat_type = 0;
 	//vec2 height = raymarch(ro, rd, mat_type);
-	vec2 tmat = raymarch(ro, rd, mat_type);
+
+	//vec2 tmat = raymarch(ro, rd, mat_type);
+
+    vec3 col = sky(ro, rd, st);
 
     float tmax = 100.0;
-    //vec4 tmat = intersect(ro, rd, tmax);       // TODO: why is this method always super slow?
-    vec3 pos = ro + tmat.x * rd;
+    vec4 tmat = intersect(ro, rd, tmax);       // TODO: why is this method always super slow?
 
-	vec3 rp = ro + tmat.y * rd;
-	vec3 n = get_normal(rp);
-	vec3 kd = get_shading(rp, LIGHT_DIRECTION, n);
+    if(tmat.x < tmax)
+    {
+        vec3 pos = ro + tmat.x * rd;
 
+        vec3 rp = ro + tmat.y * rd;
+        vec3 n = get_normal(rp);
 
-	// range for terrain fade
-	float smin = 0.05;
-	float smax = 0.19;
+        // range for terrain fade
+        float smin = 0.05;
+        float smax = 0.19;
 
-    // color vectors 
-	vec3 color1 = vec3(0.934, 0.7556, 0.8);
-	vec3 color2 = vec3(0.90, 0.733, 0.7337);
+        // color vectors 
+        vec3 color1 = vec3(0.934, 0.7556, 0.8);
+        vec3 color2 = vec3(0.90, 0.733, 0.7337);
 
-    // material colors
-	if(mat_type == 1) {
-		color1 = vec3(0.925, 0.724, 0.776);
-		color2 = vec3(0.974, 0.768, 0.412);
-	}
-    // supposed to be the second type of terrain material
-	if(mat_type == 2) {
-		color1 = color1 + vec3(noise_2d(rp.xz * 8.1), noise_2d(rp.xz * 0.998), noise_2d(rp.zx)) * 0.20;
-		color2 = color2 + vec3(noise_2d(rp.xz * 5.0), noise_2d(rp.zx * 0.44), noise_2d(rp.zx)) * 0.22;
-	}
-	
-	
-	//color1 = color1 + vec3(noise_2d(rp.xz * 8.1), noise_2d(rp.xz * 0.998), noise_2d(rp.zx)) * 0.20;
-	//color2 = color2 + vec3(noise_2d(rp.xz * 2.0), noise_2d(rp.zx * 0.44), noise_2d(rp.zx)) * 0.22;
+        // material colors
+        if(mat_type == 1) {
+            color1 = vec3(0.925, 0.724, 0.776);
+            color2 = vec3(0.974, 0.768, 0.412);
+        }
+        // supposed to be the second type of terrain material
+        if(mat_type == 2) {
+            color1 = color1 + vec3(noise_2d(rp.xz * 8.1), noise_2d(rp.xz * 0.998), noise_2d(rp.zx)) * 0.20;
+            color2 = color2 + vec3(noise_2d(rp.xz * 5.0), noise_2d(rp.zx * 0.44), noise_2d(rp.zx)) * 0.22;
+        }
+        //color1 = color1 + vec3(noise_2d(rp.xz * 8.1), noise_2d(rp.xz * 0.998), noise_2d(rp.zx)) * 0.20;
+        //color2 = color2 + vec3(noise_2d(rp.xz * 2.0), noise_2d(rp.zx * 0.44), noise_2d(rp.zx)) * 0.22;
 
-	float s = 1.0 - abs(dot(n, vec3(0.0, 1.0, 0.0)));
-	vec3 col = mix(color1, color2, clamp(s, smin, smax));
-	
-	// mix in sky
-	//col = mix(col, sky(ro, rd, height), fog(height.y));
+        float s = 1.0 - abs(dot(n, vec3(0.0, 1.0, 0.0)));
+        col = mix(color1, color2, clamp(s, smin, smax));
 
-	//float col_var = (noise_2d(rp.xz * 225.0) + noise_2d(rp.zx * 225.0)) * 0.5;
-	//col = col * col_var;
+        // occlusion 
+        float occlusion = smoothstep(0.0, 1.5, pos.y + 11.5);
+        
+        // mix in sky
+        //col = mix(col, sky(ro, rd, height), fog(height.y));
 
-    vec3 back_light = normalize(vec3(-LIGHT_DIRECTION.x, 0.0, -LIGHT_DIRECTION.z));
-    vec3 fill_light = vec3(0.0, 1.0, 0.0);
+        //float col_var = (noise_2d(rp.xz * 225.0) + noise_2d(rp.zx * 225.0)) * 0.5;
+        //col = col * col_var;
 
-    float dif = diffuse(LIGHT_DIRECTION, n, -rd, 1.0);
-    float bac = diffuse(back_light, n, -rd, 1.0);
-    float shadow = 0.0;
-    if(dif > 0.001)
-        shadow = soft_shadow(pos + 0.01 * n, LIGHT_DIRECTION, 0.005, 64.0); 
+        vec3 back_light = normalize(vec3(-LIGHT_DIRECTION.x, 0.0, -LIGHT_DIRECTION.z));
+        vec3 fill_light = vec3(0.0, 1.0, 0.0);
 
-    // now compute lights 
-    vec3 lin = vec3(0.0);
-    lin += 7.0 * dif * vec3(1.20, 0.8, 0.8) * vec3(shadow, 0.5 * shadow * shadow + 0.5, shadow * shadow);
-    //lin += 1.8 * sky * 
-	
-    col = col * 0.3 * bad_ao(n) + col * kd * lin;
-	col = mix(col, FOG_COLOR, fog(tmat.y));
+        float dif = diffuse(LIGHT_DIRECTION, n, -rd, 1.0);
+        float bac = diffuse(back_light, n, -rd, 1.0);
+        float shadow = 0.0;
+        if(dif > 0.001)
+            shadow = soft_shadow(pos + 0.01 * n, LIGHT_DIRECTION, 0.005, 64.0); 
 
-	if(tmat.x == -1.0)
-		col = sky(ro, rd, st);
+        // now compute lights 
+
+        // sky lighting 
+        float sky_amount = 0.0;
+        sky_amount += 0.2 * diffuse(normalize(vec3(0.0, 1.0, 0.0)), n, -rd, 1.0);
+
+        vec3 lin = vec3(0.0);
+        lin += 7.0 * dif * vec3(1.20, 0.8, 0.8) * vec3(shadow, 0.5 * shadow * shadow + 0.5, shadow * shadow);
+        lin += 1.8 * sky_amount * vec3(0.10, 0.30, 0.30) * occlusion;
+        
+        col = col * 0.3 * bad_ao(n) + col * lin;
+    }
+    col = mix(col, FOG_COLOR, fog(tmat.y));
 
 	frag_color = vec4(col, 1.0);
 }

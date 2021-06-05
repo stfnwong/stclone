@@ -92,7 +92,7 @@ mat3 rotate_y(float n) {
 float terrain(vec2 st) {
 	float a = fbm(st.xy * 1.9) + 1.0;
 
-	a = abs(1.0 - a) * 15.5 - 2.0;
+	a = abs(1.0 - a) * 10.5 - 2.0;
 	float b = fbm(st.yx * 33.333);
 	float v = a - b * (a * 0.2);
 

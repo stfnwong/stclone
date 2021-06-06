@@ -24,9 +24,10 @@ float mod_time;
 // lighting
 vec3 rd, ray_pos, norm;
 // color 
-vec3 col, fog, light_dir;
-vec3 albedo;
+vec3 col, fog, light_dir, albedo;
+float diffuse, fresnel, specular;
 
+// artifact killah
 vec2 eps = vec2(0.00003, -0.00003);
 
 
@@ -70,9 +71,11 @@ vec2 trace(in vec3 ro, in vec3 rd)
     return t;
 }
 
-
-
+// orbit camera coords
 vec4 c = vec4(1.0, 4.0, 10.0, 1.0);
+
+#define ambient(d) clamp(map(ray_pos * norm * d).x / d, 0.0, 1.0)
+#define subsurface(d) smoothstep(0.0, 1.0, map(ray_pos + light_dir * d).x / d)
 
 void main_image(out vec4 frag_color, in vec2 frag_coord)
 {
@@ -94,7 +97,7 @@ void main_image(out vec4 frag_color, in vec2 frag_coord)
     rd = mat3(cu, cv, cw) * normalize(vec3(uv, 0.5));
 
     col = fog = vec3(0.1) - length(uv) * 0.1;
-    light_dir = normalize(vec3(0.1, 0.5, -0.5));
+    light_dir = normalize(vec3(2.1, 2.5, -0.5));
     // trace it 
     vec2 z = trace(ro, rd);
     if(z.y > 0)      // gonna make it 
@@ -108,8 +111,11 @@ void main_image(out vec4 frag_color, in vec2 frag_coord)
         );
                 
         albedo = vec3(0.44);
-        float diffuse = max(0.0, dot(norm, light_dir));
-        col = diffuse * albedo;
+        diffuse = max(0.0, dot(norm, light_dir));
+        fresnel = pow(1.0 + dot(norm, rd), 4.0);
+        specular = pow(max(dot(reflect(light_dir, norm), rd), 0.0), 40.0);
+        col = mix(specular + albedo * (ambient(0.1) + 0.2) * diffuse + subsurface(0.2), fog, min(fresnel, 0.2));
+        //col = diffuse * albedo;
     }
 
     frag_color = vec4(col, 1.0);

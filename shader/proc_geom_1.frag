@@ -20,7 +20,7 @@ uniform vec4  i_mouse;
 #define MAX_RAYMARCH_DIST 40.0          // aka: far dist
 
 
-
+// ======== VARS ======== //
 float t;        // distance param
 vec2 scene_dist;
 vec2 eps = vec2(0.000035, -0.000035);
@@ -64,24 +64,50 @@ mat2 rotate(float r)
 }
 
 // ==== Component ==== // 
-vec2 geom(vec3 p, float m)      // m - material 
+//vec2 geom(vec3 p, float m)      // m - material 
+//{
+//    // this implementation is cheating - I am re-using stuff from evvvvil to try something out 
+//    vec2 h, t = vec2(box(p, vec3(4.0, 0.5, 0.5)), 5.0);
+//    t.x = min(box(abs(p) - vec3(3.0, 0.0, 0.0), vec3(0.8, 0.5, 100.0)), t.x);
+//    h = vec2(box(p, vec3(5.2, 0.7, 0.2)), 3.0);
+//    h.x = min(box(abs(p) - vec3(3.0, 0.0, 0.0), vec3(1.0, 0.2, 100.0)), h.x);
+//    h.x = min(length(abs(p) - vec3(7.0, 0.0, 0.0)) - 1.2, h.x);
+//
+//    t = (t.x < h.x) ? t : h;        
+//    h = vec2(box(p + vec3(0.0, 0.4, 0.0), vec3(5.4, 0.4, 3.4)), m);
+//    h.x = max(h.x, -(length(p) - 2.5));
+//    t = (t.x < h.x) ? t : h;        
+//    t.x *= 0.2;
+//
+//    return t;
+//}
+
+#define B1_MATERIAL 2.0
+#define B2_MATERIAL 4.0
+
+vec2 geom(vec3 p)
 {
-    // this implementation is cheating - I am re-using stuff from evvvvil to try something out 
-    vec2 h, t = vec2(box(p, vec3(4.0, 0.5, 0.5)), 5.0);
-    t.x = min(box(abs(p) - vec3(3.0, 0.0, 0.0), vec3(0.8, 0.5, 100.0)), t.x);
-    h = vec2(box(p, vec3(5.2, 0.7, 0.2)), 3.0);
-    h.x = min(box(abs(p) - vec3(3.0, 0.0, 0.0), vec3(1.0, 0.2, 100.0)), h.x);
-    h.x = min(length(abs(p) - vec3(7.0, 0.0, 0.0)) - 1.2, h.x);
+    vec2 h, t;
+    vec3 b1_dims = vec3(6.0, 0.5, 0.5);
+    vec3 b2_dims = vec3(6.2, 0.7, 0.2);
+    vec3 col1_dims = vec3(0.8, 0.5, 100.0);
+    vec3 col2_dims = vec3(1.0, 0.2, 100.0);
 
-    t = (t.x < h.x) ? t : h;        
-    h = vec2(box(p + vec3(0.0, 0.4, 0.0), vec3(5.4, 0.4, 3.4)), m);
-    h.x = max(h.x, -(length(p) - 2.5));
-    t = (t.x < h.x) ? t : h;        
-    t.x *= 0.2;
+    t = vec2(box(p, b1_dims), B1_MATERIAL);
+    // add in the second color 
+    t.x = min(box(abs(p) - vec3(3.0, 0.0, 0.0), col1_dims), t.x);
+    h = vec2(box(p, b2_dims), B2_MATERIAL);
+    h.x = min(box(abs(p) - vec3(3.0, 0.0, 0.0), col2_dims), h.x);
+    // adds spheres
+    //h.x = min(length(abs(p) - vec3(7.0, 0.0, 0.0)) - 1.2, h.x);
 
+    // keep the real point (and preserve material)
+    t = (t.x < h.x) ? t : h;        
+
+    t.x *= 0.5;     // shit filter   
+    
     return t;
 }
-
 
 vec2 map(in vec3 p)
 {
@@ -96,12 +122,12 @@ vec2 map(in vec3 p)
         new_pos.xyz = abs(new_pos.xyz) - mix(vec3(0.0, 3.0, 6.0), vec3(0.0, 10.0, 2.0), st);
         new_pos *= 1.2;
         new_pos.xz *= rotate(0.785 * (1.0 - st));
-        h = geom(new_pos.xyz, 4.0);
+        //t = geom(new_pos.xyz);
         h.x /= new_pos.z;
         t = (t.x < h.x) ? t : h;
     }
 
-    t = geom(new_pos, 2.0);         // do one more 
+    t = geom(new_pos);
     np = new_pos.xyz;
     p.xy *= rotate(cos(p.z * 1.4 * mod_time * 10.0) * 0.5 * mod_time * 5.0);
     h = vec2(length(p - vec3(cos(p.z * 24) * 0.05 + cos(p.x), 0.0, 0.0)) - 5.0 * st, 6.0);
@@ -110,7 +136,6 @@ vec2 map(in vec3 p)
 
     return t;
 }
-
 
 vec2 trace(in vec3 ro, in vec3 rd)
 {
@@ -143,8 +168,8 @@ void mainImage(out vec4 frag_color, in vec2 frag_coord)
 
     mod_time = mod(i_time, 62.8318);
 
-    // ray position 
-    vec3 ro = vec3(20.0, 4.0, 2.0 - cos(0.24 * mod_time) * 10.0); 
+    // ray position - also doing camera inline 
+    vec3 ro = vec3(18.0, 6.0, 5.0 - cos(0.24 * mod_time) * 10.0); 
     // camera 
     vec3 cw = normalize(vec3(0.0) - ro);
     vec3 cu = normalize(cross(cw, vec3(0.0, 1.0, 0.0)));
@@ -156,8 +181,8 @@ void mainImage(out vec4 frag_color, in vec2 frag_coord)
     scene_dist = trace(ro, rd);
     t = scene_dist.x;
 
-    col = vec3(0.1, 0.2, 0.3) - length(uv) * 0.1 * rd.y * 2.0;
-    fog = col * 1.2;
+    col = vec3(0.1, 0.2, 0.3) - length(uv) * 0.2 * rd.y * 3.0;
+    fog = col * 0.88; 
 
     // hit test
     if(scene_dist.y > 0)
@@ -170,14 +195,25 @@ void mainImage(out vec4 frag_color, in vec2 frag_coord)
             eps.xxx * map(po + eps.xxx).x
         );
 
-        albedo        = mix(vec3(0.1, 0.2, 0.4), vec3(0.1, 0.4, 0.77), 0.5 + 0.5 * sin(base_pos.y * 6.9));
+        //albedo = mix(vec3(0.1, 0.2, 0.4), vec3(0.1, 0.4, 0.77), 0.5 + 0.5 * sin(base_pos.y * 6.9));
+        albedo = mix(vec3(0.89, 0.2, 0.4), vec3(0.1, 0.4, 0.77), 0.5 + 0.5 * sin(new_pos.y * 6.9));
         if(scene_dist.y > 3.0)
-            albedo = vec3(1.0, 0.77, 0.1);
+            albedo = vec3(1.0);
+        if(scene_dist.y < 3.0)
+            albedo = vec3(0.0);
+        //if(scene_dist.y > 6.0)
+        //    albedo = clamp(mix(vec3(.0,.1,.4),vec3(.4,.0,.1),sin(np.y*.1+2.)*.5+.5)+(z.y>7.?0.:abs(ceil(cos(pp.x*1.6-1.1))-ceil(cos(pp.x*1.6-1.3)))),0.,1.);
+
         float diffuse = max(0.0, dot(no, light_dir));
         float fresnel = pow(1.0 + dot(no, rd), 4.0);
         float spec    = pow(max(dot(reflect(-light_dir, no), -rd), 0.0), 40.0);
-        col = mix(spec + mix(vec3(0.8), vec3(1.0), abs(rd)) * albedo * (lambient(0.2) * lambient(0.1) + 0.2) * (diffuse + lsmooth(2.0)), fog, min(fresnel, 0.2));                
-        col = mix(fog, col, exp(-0.0002 * t * t * t));          // soften with fog
+
+        // why are my colors shit?
+        col = mix(spec + albedo * (0.8 * lambient(0.2) + 0.2) * diffuse, fog, min(fresnel, 0.5));
+        ///col = vec3(scene_dist.y / 100.0);
+
+        //col = mix(spec + mix(vec3(0.8), vec3(1.0), abs(rd)) * albedo * (lambient(0.2) * lambient(0.1) + 0.2) * (diffuse + lsmooth(2.0)), fog, min(fresnel, 0.2));                
+        //col = mix(fog, col, exp(-0.0002 * t * t * t));          // soften with fog
     }
 
     vec3 final_col = pow(col + glow * 2.0 + glow2 * mix(vec3(1.0, 0.5, 0.0), vec3(0.9, 0.3, 0.1), 0.5 + 0.5 * sin(base_pos.y * 3.0)), vec3(0.55));

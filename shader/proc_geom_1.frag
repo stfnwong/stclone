@@ -21,7 +21,7 @@ uniform vec4  i_mouse;
 
 
 // ======== VARS ======== //
-float t;        // distance param
+float t, z;        // distance param
 vec2 scene_dist;
 vec2 eps = vec2(0.000035, -0.000035);
 
@@ -29,7 +29,6 @@ float mod_time;
 
 vec3 po;        // ray position
 vec3 no;        // normal to scene
-vec3 np;
 float st;
 
 // lights  
@@ -82,8 +81,8 @@ mat2 rotate(float r)
 //    return t;
 //}
 
-#define B1_MATERIAL 2.0
-#define B2_MATERIAL 4.0
+#define B1_MATERIAL 2
+#define B2_MATERIAL 4
 
 vec2 geom(vec3 p)
 {
@@ -114,24 +113,25 @@ vec2 map(in vec3 p)
     vec2 h, t = vec2(10000.0, 0.0);
     new_pos = p;
     base_pos = p;
+    st = 0.0;
 
     // do some rotations
     for(int i = 0; i < 4; ++i)
     {
         new_pos.xy *= rotate(sin(p.z * 0.2) * 1.57 * st);     // 
-        new_pos.xyz = abs(new_pos.xyz) - mix(vec3(0.0, 3.0, 6.0), vec3(0.0, 10.0, 2.0), st);
-        new_pos *= 1.2;
-        new_pos.xz *= rotate(0.785 * (1.0 - st));
-        //t = geom(new_pos.xyz);
-        h.x /= new_pos.z;
-        t = (t.x < h.x) ? t : h;
+        new_pos.zy *= rotate(cos(p.z * 0.5) * 2.27 * st);
+        new_pos.xyz = abs(new_pos) - mix(vec3(0.0, 3.0, 6.0), vec3(0.0, 10.0, 2.0), st);
+        //new_pos.z = mod(new_pos.z+mod_time*3.0,40.0)-20.; //CENTRAL STRUCTURE POSITION  
+        new_pos *= 1.25;
+        new_pos.xz *= rotate(0.785 * (sin(0.1 * mod_time * 2.0) - st));
+        //st /= new_pos.x;
+        //st += 1.0;
     }
 
     t = geom(new_pos);
-    np = new_pos.xyz;
     p.xy *= rotate(cos(p.z * 1.4 * mod_time * 10.0) * 0.5 * mod_time * 5.0);
     h = vec2(length(p - vec3(cos(p.z * 24) * 0.05 + cos(p.x), 0.0, 0.0)) - 5.0 * st, 6.0);
-    h.x *= 0.5;
+    h.x *= 0.4;
     t = (t.x < h.x) ? t : h;
 
     return t;
@@ -180,12 +180,13 @@ void mainImage(out vec4 frag_color, in vec2 frag_coord)
 
     scene_dist = trace(ro, rd);
     t = scene_dist.x;
+    z = scene_dist.y;
 
     col = vec3(0.1, 0.2, 0.3) - length(uv) * 0.2 * rd.y * 3.0;
     fog = col * 0.88; 
 
     // hit test
-    if(scene_dist.y > 0)
+    if(z > 0)
     {
         po = ro + rd * t;
         no = normalize(
@@ -197,23 +198,22 @@ void mainImage(out vec4 frag_color, in vec2 frag_coord)
 
         //albedo = mix(vec3(0.1, 0.2, 0.4), vec3(0.1, 0.4, 0.77), 0.5 + 0.5 * sin(base_pos.y * 6.9));
         albedo = mix(vec3(0.89, 0.2, 0.4), vec3(0.1, 0.4, 0.77), 0.5 + 0.5 * sin(new_pos.y * 6.9));
-        if(scene_dist.y > 3.0)
+        if(z > 3.0)
             albedo = vec3(1.0);
-        if(scene_dist.y < 3.0)
+        if(z < 3.0)
             albedo = vec3(0.0);
-        //if(scene_dist.y > 6.0)
+        //if(z > 6.0)
         //    albedo = clamp(mix(vec3(.0,.1,.4),vec3(.4,.0,.1),sin(np.y*.1+2.)*.5+.5)+(z.y>7.?0.:abs(ceil(cos(pp.x*1.6-1.1))-ceil(cos(pp.x*1.6-1.3)))),0.,1.);
 
         float diffuse = max(0.0, dot(no, light_dir));
         float fresnel = pow(1.0 + dot(no, rd), 4.0);
-        float spec    = pow(max(dot(reflect(-light_dir, no), -rd), 0.0), 40.0);
+        float spec    = pow(max(dot(reflect(-light_dir, no), -rd), 0.0), 50.0);
 
         // why are my colors shit?
-        col = mix(spec + albedo * (0.8 * lambient(0.2) + 0.2) * diffuse, fog, min(fresnel, 0.5));
-        ///col = vec3(scene_dist.y / 100.0);
-
+        ///col = vec3(z / 100.0);
         //col = mix(spec + mix(vec3(0.8), vec3(1.0), abs(rd)) * albedo * (lambient(0.2) * lambient(0.1) + 0.2) * (diffuse + lsmooth(2.0)), fog, min(fresnel, 0.2));                
-        //col = mix(fog, col, exp(-0.0002 * t * t * t));          // soften with fog
+        col = mix(spec + albedo * (0.8 * lambient(0.2) + 0.2) * diffuse, fog, min(fresnel, 0.5));
+        col = mix(fog, col, exp(-0.0002 * t * t));          // soften with fog
     }
 
     vec3 final_col = pow(col + glow * 2.0 + glow2 * mix(vec3(1.0, 0.5, 0.0), vec3(0.9, 0.3, 0.1), 0.5 + 0.5 * sin(base_pos.y * 3.0)), vec3(0.55));

@@ -17,7 +17,7 @@ uniform vec4  i_mouse;
 // trace globals 
 // TODO: const type vs #define? which produces the smallest binary?
 const int   MAX_TRACE_STEPS = 128;
-const float MIN_TRACE_DIST  = 0.0001;
+const float MIN_TRACE_DIST  = 0.001;
 const float MAX_TRACE_DIST  = 60.0;
 // time
 float mod_time;
@@ -28,7 +28,7 @@ vec3 col, fog, light_dir, albedo;
 float diffuse, fresnel, specular;
 // geom
 vec3 new_pos;
-float attr;
+float attr = 0;
 
 // artifact killah
 vec2 eps = vec2(0.00003, -0.00003);
@@ -63,37 +63,28 @@ mat2 rotate(float r)
 
 vec2 geom(vec3 p)
 {
-    vec2 t = vec2(box(abs(p) - vec3(3.0, 0.0, 0.0), vec3(1.0)), MAT2);
-    vec2 h = vec2(box(abs(abs(p) - vec3(3.0, 0.0, 0.0)) - vec3(0.4, 0.0, 0.4), vec3(0.3, 1.2, 0.3)), MAT1);  
-
-    t.x = min(box(p, vec3(3.5, 0.5, 0.5)), t.x);
-
-    p.xz *= rotate(1.59 * sin(mod_time) * 3.1414);
-    h.x = min(box(abs(p) - vec3(1.0, 0.0, 0.0), vec3(0.1, 10.0, 0.1)), h.x);
-    h.x = min(length(p - vec3(0, attr * 0.3, 0.0)) - 2.5, h.x);
-
-    t = (t.x < h.x) ? t : h;
-    t.x *= 0.1;
+    vec2 t = vec2(box(abs(p) - vec3(3.0, 0.0, 0.0), vec3(1.0)), MAT1);
+    t *= 0.1;
 
     return t;
 }
 
 vec2 map(vec3 p)
 {
-    p.yz *= rotate(sin(p.x * 0.1 * mod_time) * 0.5);
+    p.yz *= rotate(sin(p.x * 0.1 * mod_time) * 0.7);
     new_pos = p;
     new_pos.x = mod(new_pos.x - mod_time * 5.0, 10) - 5.0;
-    attr = min(length(p) - 10.0, 11);
+    attr = min(length(p) - 10.0, 1.0);
     
     // do some duplication shit 
-    for(int i = 0; i < 2; ++i)
+    for(int i = 0; i < 4; ++i)
     {
         new_pos = abs(new_pos) - vec3(2.0, 2.0, 0.0) - attr * 0.3;
         new_pos.xz *= rotate(0.3 - attr * 0.02);
     }
     
-    vec2 t = geom(p);
-    vec2 h = vec2(0.8 * box(p, vec3(1, 100, 1)), MAT2);
+    vec2 t = geom(new_pos);
+    vec2 h = vec2(0.8 * box(new_pos, vec3(1, 100, 1)), MAT2);
 
     t = (t.x < h.x) ? t : h;
 
@@ -123,7 +114,7 @@ vec2 trace(in vec3 ro, in vec3 rd)
 
 // orbit camera coords
 // (x-axis offset (radians), y position, z position, rotation vel)
-vec4 c = vec4(1.0, 1.0, 6.0, 0.25);
+vec4 c = vec4(3.0, 4.0, 20.0, 0.25);
 
 #define ambient(d) clamp(map(ray_pos * norm * d).x / d, 0.0, 1.0)
 #define subsurface(d) smoothstep(0.0, 1.0, map(ray_pos + light_dir * d).x / d)

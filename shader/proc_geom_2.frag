@@ -63,30 +63,43 @@ mat2 rotate(float r)
 
 vec2 geom(vec3 p)
 {
-    vec2 t = vec2(box(abs(p) - vec3(3.0, 0.0, 0.0), vec3(1.0)), MAT1);
-    t *= 0.1;
+    //vec2 t = vec2(box(abs(p) - vec3(2.0, 0.0, 0.0), vec3(1.0)), MAT1);
+    vec2 t = vec2(box(p, vec3(4, 1, 3)), MAT2);
+    t.x = max(t.x, -(length(p) - 2.5));         // this places a hole in the box base 
+    t.x = max(abs(t.x) - 0.2, (p.y - 0.4));     // cuts a horizontal plane through box
+    
+    //t = (t.x < h.x) ? t : h;
+
+    t.x *= 0.2;
 
     return t;
 }
 
+
+vec3 p1, p2, p3;
+
 vec2 map(vec3 p)
 {
-    p.yz *= rotate(sin(p.x * 0.1 * mod_time) * 0.7);
+    //p.yz *= rotate(sin(p.x * 0.1 * mod_time) * 0.7);
     new_pos = p;
-    new_pos.x = mod(new_pos.x - mod_time * 5.0, 10) - 5.0;
-    attr = min(length(p) - 10.0, 1.0);
+    new_pos.yz *= rotate(1.57);
+    //new_pos.x = mod(new_pos.x - mod_time * 5.0, 10) - 5.0;
+    //attr = min(length(p) - 10.0, 14.0);
+    p1 = new_pos;
+    p1.xz,p2.yz *= rotate(sin(new_pos.x * 0.3 - mod_time * 0.4));
+        
     
     // do some duplication shit 
-    for(int i = 0; i < 4; ++i)
+    for(int i = 0; i < 1; ++i)
     {
         new_pos = abs(new_pos) - vec3(2.0, 2.0, 0.0) - attr * 0.3;
-        new_pos.xz *= rotate(0.3 - attr * 0.02);
+        //new_pos.xz *= rotate(0.3 - attr * 0.02);
     }
     
-    vec2 t = geom(new_pos);
-    vec2 h = vec2(0.8 * box(new_pos, vec3(1, 100, 1)), MAT2);
+    vec2 t = geom(p);
+    //vec2 h = vec2(0.8 * box(new_pos, vec3(1, 100, 1)), MAT2);
 
-    t = (t.x < h.x) ? t : h;
+    //t = (t.x < h.x) ? t : h;
 
     return t;
 }
@@ -114,7 +127,7 @@ vec2 trace(in vec3 ro, in vec3 rd)
 
 // orbit camera coords
 // (x-axis offset (radians), y position, z position, rotation vel)
-vec4 c = vec4(3.0, 4.0, 20.0, 0.25);
+vec4 c = vec4(3.0, 4.0, 5.0, 0.25);
 
 #define ambient(d) clamp(map(ray_pos * norm * d).x / d, 0.0, 1.0)
 #define subsurface(d) smoothstep(0.0, 1.0, map(ray_pos + light_dir * d).x / d)

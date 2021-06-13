@@ -66,11 +66,25 @@ vec2 geom(vec3 p)
     //vec2 t = vec2(box(abs(p) - vec3(2.0, 0.0, 0.0), vec3(1.0)), MAT1);
     vec2 t = vec2(box(p, vec3(4, 1, 3)), MAT2);
     t.x = max(t.x, -(length(p) - 2.5));         // this places a hole in the box base 
-    t.x = max(abs(t.x) - 0.2, (p.y - 0.4));     // cuts a horizontal plane through box
-    
-    //t = (t.x < h.x) ? t : h;
+    t.x = max(abs(t.x) - 0.2, (p.y - 0.4));     // onion trick + cuts a horizontal plane through box
 
-    t.x *= 0.2;
+    vec2 h = vec2(box(p, vec3(5, 1, 3)), MAT2);      // new box with new material id
+    h.x = max(h.x, - (length(p) - 2.5));        // cut another hole in this box 
+    h.x = max(abs(h.x) - 0.1, (p.y - 0.5));     // another onion trick cut
+
+    // merge and retain material id 
+    t = t.x < h.x ? t : h;
+
+    // another box - in the original this had the material id passed in         
+    h = vec2(box(p + vec3(0.0, 0.4, 0.0), vec3(5.4, 0.4, 3.4)), MAT2);
+    h.x = max(h.x, -(length(p) - 2.5));     // diggng more holes into geom
+    t = t.x < h.x ? t : h;      // merge again
+
+    // stick a ball in it broski
+    h = vec2(length(p) - 2.0, MAT1);
+    t = (t.x < h.x) ? t : h;
+    
+    t.x *= 0.6;
 
     return t;
 }
@@ -78,29 +92,10 @@ vec2 geom(vec3 p)
 
 vec3 p1, p2, p3;
 
+// until the geometry is right, we don't do any positional transforms
 vec2 map(vec3 p)
 {
-    //p.yz *= rotate(sin(p.x * 0.1 * mod_time) * 0.7);
-    new_pos = p;
-    new_pos.yz *= rotate(1.57);
-    //new_pos.x = mod(new_pos.x - mod_time * 5.0, 10) - 5.0;
-    //attr = min(length(p) - 10.0, 14.0);
-    p1 = new_pos;
-    p1.xz,p2.yz *= rotate(sin(new_pos.x * 0.3 - mod_time * 0.4));
-        
-    
-    // do some duplication shit 
-    for(int i = 0; i < 1; ++i)
-    {
-        new_pos = abs(new_pos) - vec3(2.0, 2.0, 0.0) - attr * 0.3;
-        //new_pos.xz *= rotate(0.3 - attr * 0.02);
-    }
-    
     vec2 t = geom(p);
-    //vec2 h = vec2(0.8 * box(new_pos, vec3(1, 100, 1)), MAT2);
-
-    //t = (t.x < h.x) ? t : h;
-
     return t;
 }
 
@@ -166,10 +161,10 @@ void main_image(out vec4 frag_color, in vec2 frag_coord)
         );
                 
         albedo = vec3(0.4, 0.56, 0.01);
-        if(z.y < 5.0)
-            albedo = vec3(1.0, 0.0, 0.0);
-        if(z.y > 5.0)
-            albedo = vec3(0.0, 1.0, 0.75);
+        if(z.y > MAT1)
+            albedo = vec3(1.0, 0.2, 0.0);
+        if(z.y > MAT2)
+            albedo = vec3(0.2, 1.0, 0.75);
         diffuse = max(0.0, dot(norm, light_dir));
         fresnel = pow(1.0 + dot(norm, rd), 4.0);
         specular = pow(max(dot(reflect(light_dir, norm), rd), 0.0), 40.0);

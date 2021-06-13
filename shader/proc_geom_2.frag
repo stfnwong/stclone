@@ -27,7 +27,7 @@ vec3 rd, ray_pos, norm;
 vec3 col, fog, light_dir, albedo;
 float diffuse, fresnel, specular;
 // geom
-vec3 new_pos;
+vec3 pos2, pos3;
 float attr = 0;
 
 // artifact killah
@@ -91,10 +91,19 @@ vec2 geom(vec3 p)
 
 
 vec3 p1, p2, p3;
+float anim1, anim2;
 
 // until the geometry is right, we don't do any positional transforms
 vec2 map(vec3 p)
 {
+    pos2 = p;
+    pos2.yz = p.yz *= rotate(sin(pos2.x * 0.3 - mod_time * 0.5) * 0.4);
+
+    // this var is used for animating various things 
+    anim1 = sin(pos2.x * 0.2 * mod_time);
+    anim2 = cos(pos2.x * 0.2 * mod_time);
+    p.x = mod(p.x - mod_time * 4.0, 20) - 10.0;      // mod along z axis
+
     vec2 t = geom(p);
     return t;
 }
@@ -122,7 +131,7 @@ vec2 trace(in vec3 ro, in vec3 rd)
 
 // orbit camera coords
 // (x-axis offset (radians), y position, z position, rotation vel)
-vec4 c = vec4(3.0, 4.0, 5.0, 0.25);
+vec4 c = vec4(-1.0, 8.0, -10.0, 0.0);
 
 #define ambient(d) clamp(map(ray_pos * norm * d).x / d, 0.0, 1.0)
 #define subsurface(d) smoothstep(0.0, 1.0, map(ray_pos + light_dir * d).x / d)
@@ -159,12 +168,15 @@ void main_image(out vec4 frag_color, in vec2 frag_coord)
             eps.yxy * map(ray_pos + eps.yxy).x +
             eps.xxx * map(ray_pos + eps.xxx).x
         );
+    //vec3 bg_col_1 = vec3(0.2, 0.5, blue_component);    
+    //vec3 bg_col_2 = vec3(0.5, 0.0, 0.7);
+    //vec3 bg_col_3 = vec3(0.4, 0.5, 0.77);
                 
-        albedo = vec3(0.4, 0.56, 0.01);
+        albedo = vec3(0.25, 0.56, 0.2);
         if(z.y > MAT1)
-            albedo = vec3(1.0, 0.2, 0.0);
+            albedo = vec3(0.4, 0.3, 0.7);
         if(z.y > MAT2)
-            albedo = vec3(0.2, 1.0, 0.75);
+            albedo = vec3(0.2, 0.5, 0.75);
         diffuse = max(0.0, dot(norm, light_dir));
         fresnel = pow(1.0 + dot(norm, rd), 4.0);
         specular = pow(max(dot(reflect(light_dir, norm), rd), 0.0), 40.0);

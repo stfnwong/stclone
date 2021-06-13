@@ -61,8 +61,14 @@ mat2 rotate(float r)
 #define MAT3 7
 
 
+vec3 p1, p2, p3;
+float anim1=0, anim2=0;
+
+
 vec2 geom(vec3 p)
 {
+    // animate the lines 
+    p.y += anim1 * 0.05;
     //vec2 t = vec2(box(abs(p) - vec3(2.0, 0.0, 0.0), vec3(1.0)), MAT1);
     vec2 t = vec2(box(p, vec3(4, 1, 3)), MAT2);
     t.x = max(t.x, -(length(p) - 2.5));         // this places a hole in the box base 
@@ -84,14 +90,12 @@ vec2 geom(vec3 p)
     h = vec2(length(p) - 2.0, MAT1);
     t = (t.x < h.x) ? t : h;
     
-    t.x *= 0.6;
+    t.x *= 0.2;
 
     return t;
 }
 
 
-vec3 p1, p2, p3;
-float anim1, anim2;
 
 // until the geometry is right, we don't do any positional transforms
 vec2 map(vec3 p)
@@ -100,11 +104,38 @@ vec2 map(vec3 p)
     pos2.yz = p.yz *= rotate(sin(pos2.x * 0.3 - mod_time * 0.5) * 0.4);
 
     // this var is used for animating various things 
-    anim1 = sin(pos2.x * 0.2 * mod_time);
-    anim2 = cos(pos2.x * 0.2 * mod_time);
-    p.x = mod(p.x - mod_time * 4.0, 20) - 10.0;      // mod along z axis
+    anim1 = sin(pos2.x * 0.12 * mod_time);
+    anim2 = cos(pos2.x * 0.12 * mod_time);
+    p.x = mod(p.x - mod_time * 4.0, 10) - 5.0;      // mod along z axis
+    //p.x = mod(p.x - mod_time * 4.0, 20) - 10.0;      // mod along z axis
 
-    vec2 t = geom(p);
+    // Make a new position which is a vec4. We do this so that 
+    // we can track scale changes in the w component and reuse it 
+    // later for distance field stuff.
+    vec4 wpos = vec4(p * 0.4, 0.4);
+
+    for(int i = 0; i < 4; ++i)
+    {
+        wpos.xyz = abs(pos2.xyz) - vec3(1, 1.2, 0);
+        // below adds the box 
+        wpos.xyz = 2.0 * clamp(wpos.xyz, -vec3(0), vec3(2, 0, 4.3 + anim1)) - wpos.xyz; 
+        wpos = wpos * (1.3) / clamp(dot(wpos.xyz, wpos.xyz), 0.1, 0.92);    // clamp and scale each iter
+    }
+
+    vec2 h, t = geom(abs(wpos.xyz) - vec3(2, 0, 0));        // TODO:  add material id to call, MAT2);
+    //vec2 h, t = geom(pos2.xyz) - vec3(2, 0, 0));
+    // this is the trick where we render the fractal without artifacting by tweaking the w component
+    t.x /= wpos.w;
+    // cut the fractal inside a box 
+    t.x = max(t.x, box(p, vec3(5, 5, 20)));
+    // re-use the position to create another fractal on the side 
+
+    // merge 
+    //t = t.x < h.x ? t : h;
+
+
+    //vec2 t = geom(p)
+    t *= 0.85;
     return t;
 }
 
@@ -131,7 +162,7 @@ vec2 trace(in vec3 ro, in vec3 rd)
 
 // orbit camera coords
 // (x-axis offset (radians), y position, z position, rotation vel)
-vec4 c = vec4(-1.0, 8.0, -10.0, 0.0);
+vec4 c = vec4(1.0, 8.0, -8.0, 0.2);
 
 #define ambient(d) clamp(map(ray_pos * norm * d).x / d, 0.0, 1.0)
 #define subsurface(d) smoothstep(0.0, 1.0, map(ray_pos + light_dir * d).x / d)

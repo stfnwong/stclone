@@ -24,7 +24,7 @@ float mod_time;
 vec3 rd, ray_pos, norm;
 // color 
 vec3 col, fog, light_dir, albedo;
-float diffuse, fresnel, specular;
+float diffuse, fresnel, specular, glow;
 // geom
 vec3 pos2, pos3;
 float attr = 0;
@@ -107,8 +107,19 @@ vec2 map(vec3 p)
     //vec2 t = geom(p.xyz, MAT3);         // call this to render geometry alone with no transforms
     vec2 t = geom(abs(new_pos.xyz) - vec3(2,0,0), MAT3);         // call this to render geometry alone with no transforms
     t.x /= new_pos.w;
+    t.x = max(t.x, box(p, vec3(5, 5, 10)));     // clip fractal into a box
 
+    vec2 h = geom(abs(new_pos.xyz) - vec3(0, 4.5, 0), MAT2);
+    h.x = max(h.x, -box(p, vec3(20, 5, 5)));
+    h.x /= new_pos.w * 1.5;
+    t = (t.x < h.x) ? t : h;
 
+    h = vec2(0.6 * pos2.y + sin(p.y * 5.0) * 0.03, MAT3);
+    t = (t.x < h.x) ? t : h;
+    h = vec2(length(cos(pos2.xyz * 0.6 + vec3(mod_time, mod_time, 0))) + 0.003, MAT3);
+    glow += 0.1 / (0.1 * h.x * h.x * 4000.0);
+    t = (t.x < h.x) ? t : h;
+    
     return t;
 }
 
@@ -186,7 +197,7 @@ void main_image(out vec4 frag_color, in vec2 frag_coord)
         //col = diffuse * albedo;
     }
 
-    frag_color = vec4(pow(col, vec3(0.45)), 1.0);
+    frag_color = vec4(pow(col + glow * 0.2, vec3(0.45)), 1.0);
 }
 
 

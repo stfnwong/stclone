@@ -89,7 +89,25 @@ vec2 map(vec3 p)
     pos2 = pos3 = p;
     pos3.yz = p.yz * rotate(sin(pos2.x * 0.3 - mod_time * 0.5) * 0.4);
 
-    vec2 t = geom(p, MAT3);         // call this to render geometry alone with no transforms
+    p.yz *= rotate(1.57); 
+    anim1 = sin(pos2.x * 0.4 * mod_time);
+    anim2 = sin(pos2.x * 0.2 * mod_time);
+
+    p.x = mod(p.x - mod_time * 0.2, 10.0) - 5.0;        // mod along x
+    // this is the trick where we use the w component of a vec4 to track scale changes in the fractal
+    vec4 new_pos = vec4(p * 0.4, 0.4);
+
+    for(int i = 0; i < 4; ++i)
+    {
+        new_pos.xyz = abs(new_pos.xyz) - vec3(1, 1.2, 0);
+        new_pos.xyz = 2.0 * clamp(new_pos.xyz, -vec3(0), vec3(2, 0, 4.3 + anim2)) - new_pos.xyz;
+        new_pos = new_pos * (1.3) / clamp(dot(new_pos.xyz, new_pos.xyz), 0.1, 0.92);        // clamp and scale
+    }
+
+    //vec2 t = geom(p.xyz, MAT3);         // call this to render geometry alone with no transforms
+    vec2 t = geom(abs(new_pos.xyz) - vec3(2,0,0), MAT3);         // call this to render geometry alone with no transforms
+    t.x /= new_pos.w;
+
 
     return t;
 }
@@ -114,7 +132,7 @@ vec2 trace(in vec3 ro, in vec3 rd)
 
 // orbit camera coords
 // (x-axis offset (radians), y position, z position, rotation vel)
-vec4 c = vec4(1.0, 1.0, -8.0, 0.2);
+vec4 c = vec4(2.0, 3.0, -8.0, 0.12);
 
 #define ambient(d) clamp(map(ray_pos * norm * d).x / d, 0.0, 1.0)
 #define subsurface(d) smoothstep(0.0, 1.0, map(ray_pos + light_dir * d).x / d)
@@ -159,7 +177,7 @@ void main_image(out vec4 frag_color, in vec2 frag_coord)
             albedo = vec3(0.4, 0.3, 0.7);
         if(z.y > MAT2)
             albedo = vec3(0.2, 0.5, 0.75);
-        if(z.y > MAT3)
+        if(z.y >= MAT3)
             albedo = mix(vec3(1, 0.5, 0), vec3(0.9, 0.3, 0.1), 0.5 + 0.5 * sin(pos3.y * 7.0));
         diffuse = max(0.0, dot(norm, light_dir));
         fresnel = pow(1.0 + dot(norm, rd), 4.0);

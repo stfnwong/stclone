@@ -89,28 +89,34 @@ vec2 map(vec3 p)
     pos2 = pos3 = p;
     pos3.yz = p.yz * rotate(sin(pos2.x * 0.3 - mod_time * 0.5) * 0.4);
 
+    p.zx *= rotate(2.57); 
     p.yz *= rotate(1.57); 
-    anim1 = sin(pos2.x * 0.4 * mod_time);
-    anim2 = sin(pos2.x * 0.2 * mod_time);
+    anim1 = sin(pos2.x * 0.8 * mod_time);
+    anim2 = cos(pos2.x * 0.2 * mod_time);
 
     p.x = mod(p.x - mod_time * 0.2, 10.0) - 5.0;        // mod along x
     // this is the trick where we use the w component of a vec4 to track scale changes in the fractal
-    vec4 new_pos = vec4(p * 0.4, 0.4);
+    vec4 new_pos = vec4(p * 0.3, 0.3);
 
-    for(int i = 0; i < 4; ++i)
+    for(int i = 0; i < 3; ++i)
     {
         new_pos.xyz = abs(new_pos.xyz) - vec3(1, 1.2, 0);
-        new_pos.xyz = 2.0 * clamp(new_pos.xyz, -vec3(0), vec3(2, 0, 4.3 + anim2)) - new_pos.xyz;
-        new_pos = new_pos * (1.3) / clamp(dot(new_pos.xyz, new_pos.xyz), 0.1, 0.92);        // clamp and scale
+        new_pos.xyz = 2.0 * clamp(new_pos.xyz, -vec3(0), vec3(4, 0, -2.3 + anim2)) - new_pos.xyz;
+        //new_pos.zy *= 0.2 * sin(0.44 * mod_time) * rotate(p.z);
+        new_pos = new_pos * (1.3) / clamp(dot(new_pos.xyz, new_pos.xyz), 0.1, 0.82);        // clamp and scale
     }
 
     //vec2 t = geom(p.xyz, MAT3);         // call this to render geometry alone with no transforms
-    vec2 t = geom(abs(new_pos.xyz) - vec3(2,0,0), MAT3);         // call this to render geometry alone with no transforms
+    vec2 t = geom(abs(new_pos.xyz) - vec3(2,0,0), MAT2);         // call this to render geometry alone with no transforms
     t.x /= new_pos.w;
     t.x = max(t.x, box(p, vec3(5, 5, 10)));     // clip fractal into a box
+    new_pos *= 0.5;
+    new_pos.yz *= rotate(0.785);
+    new_pos.yz += 2.5;
+    
 
     vec2 h = geom(abs(new_pos.xyz) - vec3(0, 4.5, 0), MAT2);
-    h.x = max(h.x, -box(p, vec3(20, 5, 5)));
+    h.x = max(h.x, -box(p, vec3(20, 4, 4)));        // remove inside of large fractal
     h.x /= new_pos.w * 1.5;
     t = (t.x < h.x) ? t : h;
 
@@ -165,10 +171,11 @@ void main_image(out vec4 frag_color, in vec2 frag_coord)
 
     rd = mat3(cu, cv, cw) * normalize(vec3(uv, 0.5));
 
-    col = fog = vec3(0.1) - length(uv) * 0.1 - rd.y * 0.2;
+    col = fog = vec3(0.1, 0.1, 0.6) - length(uv) * 0.1 - rd.y * 0.2;
     light_dir = normalize(vec3(0.2, 0.5, -0.5));
     // trace it 
     vec2 z = trace(ro, rd);
+    float t = z.x;
     if(z.y > 0)      // gonna make it 
     {
         ray_pos = ro + rd * z.x;
@@ -183,18 +190,19 @@ void main_image(out vec4 frag_color, in vec2 frag_coord)
     //vec3 bg_col_3 = vec3(0.4, 0.5, 0.77);
                 
         // these colors are actually quite ugly...
-        albedo = vec3(0.25, 0.56, 0.2);
+        albedo = vec3(0.55, 0.56, 0.1);
         if(z.y > MAT1)
-            albedo = vec3(0.4, 0.3, 0.7);
+            albedo = vec3(0.6, 0.3, 0.7);
         if(z.y > MAT2)
             albedo = vec3(0.2, 0.5, 0.75);
         if(z.y >= MAT3)
-            albedo = mix(vec3(1, 0.5, 0), vec3(0.9, 0.3, 0.1), 0.5 + 0.5 * sin(pos3.y * 7.0));
+            albedo = mix(vec3(0.5, 0.5, 0.7), vec3(0.9, 0.3, 0.7), 0.5 + 0.5 * sin(pos3.y * 7.0));
         diffuse = max(0.0, dot(norm, light_dir));
         fresnel = pow(1.0 + dot(norm, rd), 4.0);
         specular = pow(max(dot(reflect(light_dir, norm), rd), 0.0), 40.0);
-        col = mix(specular + albedo * (ambient(0.1) + 0.2) * (diffuse + subsurface(0.2)), fog, min(fresnel, 0.2));
+        col = mix(specular + mix(vec3(0.8), vec3(1.0), abs(rd)) * albedo * (ambient(0.1) + 0.2) * (diffuse + subsurface(0.2)), fog, min(fresnel, 0.2));
         //col = diffuse * albedo;
+        col = mix(fog, col, exp(-0.003 * t * t *t ));
     }
 
     frag_color = vec4(pow(col + glow * 0.2, vec3(0.45)), 1.0);

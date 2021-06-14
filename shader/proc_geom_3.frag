@@ -17,14 +17,14 @@ uniform vec4  i_mouse;
 // trace globals 
 const int   MAX_TRACE_STEPS = 128;
 const float MIN_TRACE_DIST  = 0.001;
-const float MAX_TRACE_DIST  = 60.0;
+const float MAX_TRACE_DIST  = 40.0;
 // time
 float mod_time;
 // lighting
 vec3 rd, ray_pos, norm;
 // color 
 vec3 col, fog, light_dir, albedo;
-float diffuse, fresnel, specular, glow;
+float diffuse, fresnel, specular, glow, glow2;
 // geom
 vec3 pos2, pos3;
 float attr = 0;
@@ -77,8 +77,8 @@ vec2 geom(vec3 p, float mat_id)
     h.x = max(h.x, -(length(p) - 2.5));
     
     t = (t.x < h.x) ? t : h;        // geom merge
-    h = vec2(length(p) - 2.0, mat_id);
-    t = (t.x < h.x) ? t : h;        // geom merge
+    //h = vec2(length(p) - 2.0, mat_id);      // sphere
+    //t = (t.x < h.x) ? t : h;        // geom merge
     t.x *= 0.7;
 
     return t;
@@ -87,7 +87,7 @@ vec2 geom(vec3 p, float mat_id)
 vec2 map(vec3 p)
 {
     pos2 = pos3 = p;
-    pos3.yz = p.yz * rotate(sin(pos2.x * 0.3 - mod_time * 0.5) * 0.4);
+    pos3.yz = p.yz * rotate(sin(pos2.x * 0.2 - mod_time * 0.5) * 0.4);
 
     p.zx *= rotate(2.57); 
     p.yz *= rotate(1.57); 
@@ -95,6 +95,7 @@ vec2 map(vec3 p)
     anim2 = cos(pos2.x * 0.2 * mod_time);
 
     p.x = mod(p.x - mod_time * 0.2, 10.0) - 5.0;        // mod along x
+    //p.z =  
     // this is the trick where we use the w component of a vec4 to track scale changes in the fractal
     vec4 new_pos = vec4(p * 0.3, 0.3);
 
@@ -113,17 +114,17 @@ vec2 map(vec3 p)
     new_pos *= 0.5;
     new_pos.yz *= rotate(0.785);
     new_pos.yz += 2.5;
-    
 
-    vec2 h = geom(abs(new_pos.xyz) - vec3(0, 4.5, 0), MAT2);
+    vec2 h = geom(abs(new_pos.xyz) - vec3(0, 4.5, 0), MAT3);
     h.x = max(h.x, -box(p, vec3(20, 4, 4)));        // remove inside of large fractal
     h.x /= new_pos.w * 1.5;
+    glow2 += 0.01 / (0.1 * h.x * h.x *  (1000.0 - anim2 * 998.0));
     t = (t.x < h.x) ? t : h;
 
-    h = vec2(0.6 * pos2.y + sin(p.y * 5.0) * 0.03, MAT3);
+    h = vec2(0.6 * pos3.y + sin(p.y * 5.0) * 0.03, MAT3);
     t = (t.x < h.x) ? t : h;
-    h = vec2(length(cos(pos2.xyz * 0.6 + vec3(mod_time, mod_time, 0))) + 0.003, MAT3);
-    glow += 0.1 / (0.1 * h.x * h.x * 4000.0);
+    h = vec2(length(cos(pos3.xyz * 0.6 + vec3(mod_time, mod_time, 0))) + 0.003, MAT3);
+    glow += 0.1 / (0.1 * h.x * h.x * 2000.0);
     t = (t.x < h.x) ? t : h;
     
     return t;
@@ -185,9 +186,6 @@ void main_image(out vec4 frag_color, in vec2 frag_coord)
             eps.yxy * map(ray_pos + eps.yxy).x +
             eps.xxx * map(ray_pos + eps.xxx).x
         );
-    //vec3 bg_col_1 = vec3(0.2, 0.5, blue_component);    
-    //vec3 bg_col_2 = vec3(0.5, 0.0, 0.7);
-    //vec3 bg_col_3 = vec3(0.4, 0.5, 0.77);
                 
         // these colors are actually quite ugly...
         albedo = vec3(0.55, 0.56, 0.1);
@@ -205,7 +203,7 @@ void main_image(out vec4 frag_color, in vec2 frag_coord)
         col = mix(fog, col, exp(-0.003 * t * t *t ));
     }
 
-    frag_color = vec4(pow(col + glow * 0.2, vec3(0.45)), 1.0);
+    frag_color = vec4(pow(col + glow * 0.2 + glow2 * mix(vec3(1.0, 0.5, 0.0), vec3(0.9, 0.3, 0.1), 0.5 + 0.5 * sin(pos3.y * 3.0)) , vec3(0.45)), 1.0);
 }
 
 

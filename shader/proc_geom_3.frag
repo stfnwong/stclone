@@ -73,14 +73,14 @@ vec2 geom(vec3 p, float mat_id)
     h.x = max(abs(h.x) - 0.1, (p.y - 0.5));
     t = (t.x < h.x) ? t : h;        // geom merge
 
-    // another box with a new material 
+    //// another box with a new material 
     h = vec2(box(p + vec3(0, 0.4, 0), vec3(5.4, 0.4, 3.4)), mat_id);
     h.x = max(h.x, -(length(p) - 2.5));
     
     t = (t.x < h.x) ? t : h;        // geom merge
     //h = vec2(length(p) - 2.0, mat_id);      // sphere
     //t = (t.x < h.x) ? t : h;        // geom merge
-    t.x *= 0.7;
+    t.x *= 0.6;
 
     return t;
 }
@@ -111,21 +111,22 @@ vec2 map(vec3 p)
     //vec2 t = geom(p.xyz, MAT3);         // call this to render geometry alone with no transforms
     vec2 t = geom(abs(new_pos.xyz) - vec3(2,0,0), MAT2);         // call this to render geometry alone with no transforms
     t.x /= new_pos.w;
-    t.x = max(t.x, box(p, vec3(5, 5, 10)));     // clip fractal into a box
+    t.x = max(t.x, box(p, vec3(25, 10, 10)));     // clip fractal into a box
     new_pos *= 0.5;
     new_pos.yz *= rotate(0.785);
     new_pos.yz += 2.5;
 
-    vec2 h = geom(abs(new_pos.xyz) - vec3(5, 4.5, 0), MAT3);
+    vec2 h = geom(abs(new_pos.xyz) - vec3(15, 4.5, 0), MAT3);
     h.x = max(h.x, -box(p, vec3(20, 6, 6)));        // remove inside of large fractal
     h.x /= new_pos.w * 1.5;
     glow2 += 0.001 / (0.25 * h.x * h.x *  (1000.0 - anim2 * 998.0));
     t = (t.x < h.x) ? t : h;
 
-    h = vec2(0.6 * pos3.y + sin(p.y * 5.0) * 0.03, MAT4);
+    h = vec2(0.26 * pos3.z + sin(p.x * 25.0) * 0.03, MAT4);
+    h.x /= new_pos.w * 2.2;
     t = (t.x < h.x) ? t : h;
-    h = vec2(length(cos(pos3.xyz * 0.6 + vec3(mod_time, mod_time, 0))) + 0.003, MAT3);
-    glow += 0.01 / (0.25 * h.x * h.x * 2000.0);
+    h = vec2(length(cos(pos2.xyz * 0.6 + vec3(mod_time, mod_time, 0))) + 0.003, MAT3);
+    glow += 0.01 / (0.125 * h.x * h.x * 2000.0);
     t = (t.x < h.x) ? t : h;
     
     return t;
@@ -151,7 +152,7 @@ vec2 trace(in vec3 ro, in vec3 rd)
 
 // orbit camera coords
 // (x-axis offset (radians), y position, z position, rotation vel)
-vec4 c = vec4(2.5 * sin(0.25 * mod_time), 1.0, 2.0, 0.12);
+vec4 c = vec4(-35.0, -1.0, 3.0, 0.0);
 
 #define ambient(d) clamp(map(ray_pos * norm * d).x / d, 0.0, 1.0)
 #define subsurface(d) smoothstep(0.0, 1.0, map(ray_pos + light_dir * d).x / d)
@@ -197,11 +198,11 @@ void main_image(out vec4 frag_color, in vec2 frag_coord)
         if(z.y >= MAT3)
             albedo = vec3(0.12, 0.9, 0.85);
         if(z.y >= MAT4)
-            albedo = mix(vec3(0.5, 0.65, 0.7), vec3(0.9, 0.3, 0.7), 0.5 + 0.5 * sin(pos3.y * 7.0));
+            albedo = mix(vec3(0.5, 0.7, 0.7), vec3(0.9, 0.9, 0.7), 0.5 + 0.5 * sin(pos3.y * 7.0));
         diffuse = max(0.0, dot(norm, light_dir));
         fresnel = pow(1.0 + dot(norm, rd), 4.0);
         specular = pow(max(dot(reflect(light_dir, norm), rd), 0.0), 40.0);
-        col = mix(specular + mix(vec3(0.8), vec3(1.0), abs(rd)) * albedo * (ambient(0.1) + 0.2) * (diffuse + subsurface(0.2)), fog, min(fresnel, 0.2));
+        col = mix(specular + mix(vec3(0.8), vec3(1.0), abs(rd)) * albedo * (ambient(0.1) + 0.2) * (diffuse + subsurface(0.3)), fog, min(fresnel, 0.2));
         //col = diffuse * albedo;
         col = mix(fog, col, exp(-0.003 * t * t *t ));
     }

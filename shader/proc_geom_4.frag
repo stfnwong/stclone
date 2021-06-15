@@ -24,7 +24,7 @@ float mod_time;
 vec3 rd, ray_pos, norm;
 // color 
 vec3 col, fog, light_dir, albedo;
-float diffuse, fresnel, specular, glow, glow2;
+float diffuse, fresnel, specular, glow=0, glow2=0;
 // geom
 vec3 pos2, pos3;
 float attr = 0;
@@ -88,7 +88,17 @@ vec2 geom(vec3 p, float mat_id)
 
 vec2 map(vec3 p)
 {
-    vec2 t = geom(p.xyz, MAT3);         // call this to render geometry alone with no transforms
+    pos2 = p;
+
+    for(int i = 0; i < 3; ++i)
+    {
+        pos2 = abs(pos2) - vec3(2.5, 1.7, 0.0);
+        pos2.xy *= rotate(cos(p.y * 0.05) * 0.5);
+        pos2.xz *= rotate(20);
+    }
+    //vec2 t = geom(p.xyz, MAT3);         // call this to render geometry alone with no transforms
+    vec2 t = geom(pos2, MAT4);
+
     return t;
 }
 
@@ -111,7 +121,7 @@ vec2 trace(in vec3 ro, in vec3 rd)
 }
 
 //vec4 c = vec4(-35.0, -1.0, 3.0, 0.0);
-vec4 c = vec4(1.0, 1.0, 4.0, 0.2);
+vec4 c = vec4(1.0, 1.0, 10.0, 0.2);
 
 #define ambient(d) clamp(map(ray_pos * norm * d).x / d, 0.0, 1.0)
 #define subsurface(d) smoothstep(0.0, 1.0, map(ray_pos + light_dir * d).x / d)

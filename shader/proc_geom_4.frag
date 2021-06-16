@@ -92,9 +92,9 @@ vec2 map(vec3 p)
 
     for(int i = 0; i < 3; ++i)
     {
-        pos2 = abs(pos2) - vec3(2.5, 1.7, 0.0);
+        pos2 = abs(pos2) - vec3(2.5, 1.7, 1.0);
         pos2.xy *= rotate(cos(p.y * 0.05) * 0.5);
-        pos2.xz *= rotate(20);
+        pos2.yz *= rotate(0.5 * sin(0.75 * mod_time + 2.5));
     }
     //vec2 t = geom(p.xyz, MAT3);         // call this to render geometry alone with no transforms
     vec2 t = geom(pos2, MAT4);
@@ -120,8 +120,13 @@ vec2 trace(in vec3 ro, in vec3 rd)
     return t;
 }
 
+// orbit camera coords
+// (x-axis offset (radians), y position, z position, rotation vel)
 //vec4 c = vec4(-35.0, -1.0, 3.0, 0.0);
-vec4 c = vec4(1.0, 1.0, 10.0, 0.2);
+vec4 c = vec4(2.0 * sin(0.25 * mod_time + 10.0), 
+              8.0 * cos(0.5 * mod_time + 10.0), 
+10.0,
+              0.2 * sin(2.4 * mod_time + 1.0));
 
 #define ambient(d) clamp(map(ray_pos * norm * d).x / d, 0.0, 1.0)
 #define subsurface(d) smoothstep(0.0, 1.0, map(ray_pos + light_dir * d).x / d)
@@ -173,7 +178,7 @@ void main_image(out vec4 frag_color, in vec2 frag_coord)
         specular = pow(max(dot(reflect(light_dir, norm), rd), 0.0), 40.0);
         col = mix(specular + mix(vec3(0.8), vec3(1.0), abs(rd)) * albedo * (ambient(0.1) + 0.2) * (diffuse + subsurface(0.3)), fog, min(fresnel, 0.2));
         //col = diffuse * albedo;
-        col = mix(fog, col, exp(-0.003 * t * t *t ));
+        col = mix(fog, col, exp(-0.003 * t *t ));
     }
 
     frag_color = vec4(pow(col + glow * 0.2 + glow2 * mix(vec3(1.0, 0.5, 0.0), vec3(0.9, 0.3, 0.1), 0.5 + 0.5 * sin(pos3.y * 3.0)) , vec3(0.45)), 1.0);

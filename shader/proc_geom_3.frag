@@ -122,7 +122,7 @@ vec2 map(vec3 p)
     glow2 += 0.001 / (0.25 * h.x * h.x *  (1000.0 - anim2 * 998.0));
     t = (t.x < h.x) ? t : h;
 
-    h = vec2(0.26 * pos3.z + sin(p.x * 25.0) * 0.03, MAT4);
+    h = vec2(0.26 * pos3.z + sin(p.x * 25.0) * 0.03 + 1, MAT4);
     h.x /= new_pos.w * 2.2;
     t = (t.x < h.x) ? t : h;
     h = vec2(length(cos(pos2.xyz * 0.6 + vec3(mod_time, mod_time, 0))) + 0.003, MAT3);
@@ -152,7 +152,8 @@ vec2 trace(in vec3 ro, in vec3 rd)
 
 // orbit camera coords
 // (x-axis offset (radians), y position, z position, rotation vel)
-vec4 c = vec4(-35.0, -1.0, 3.0, 0.0);
+//vec4 c = vec4(-35.0, -1.0, 3.0, 0.0);
+vec4 c = vec4(-85.0, 2.0, 5.0, 0.0);
 
 #define ambient(d) clamp(map(ray_pos * norm * d).x / d, 0.0, 1.0)
 #define subsurface(d) smoothstep(0.0, 1.0, map(ray_pos + light_dir * d).x / d)

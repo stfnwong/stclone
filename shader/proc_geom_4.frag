@@ -171,7 +171,7 @@ void main_image(out vec4 frag_color, in vec2 frag_coord)
 
     rd = mat3(cu, cv, cw) * normalize(vec3(uv, 0.5));
 
-    col = fog = vec3(0.1, 0.1, 0.4) - length(uv) * 0.01 - rd.z * 0.1;
+    col = fog = vec3(0.1, 0.1, 0.24) - length(uv) * 0.02 - rd.z * 0.18;
     light_dir = normalize(vec3(0.2, 0.5, -0.5));
     // trace it 
     vec2 z = trace(ro, rd);
@@ -201,7 +201,7 @@ void main_image(out vec4 frag_color, in vec2 frag_coord)
         specular = pow(max(dot(reflect(light_dir, norm), rd), 0.0), 40.0);
         col = mix(specular + mix(vec3(0.8), vec3(1.0), abs(rd)) * albedo * (ambient(0.1) + 0.2) * (diffuse + subsurface(0.3)), fog, min(fresnel, 0.2));
         //col = diffuse * albedo;
-        col = mix(fog, col, exp(-0.003 * t *t ));
+        col = mix(fog, col, exp(-0.002 * t * t));
     }
 
     frag_color = vec4(pow(col + glow * 0.2 + glow2 * mix(vec3(1.0, 0.5, 0.0), vec3(0.9, 0.3, 0.1), 0.5 + 0.5 * sin(pos3.y * 3.0)) , vec3(0.45)), 1.0);

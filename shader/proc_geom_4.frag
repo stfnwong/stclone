@@ -88,7 +88,7 @@ vec2 map(vec3 p)
 {
     pos2 = p;
     //pos2.z = mod(p.z - mod_time * 0.2, 10.0) - 5.0;        // mod along x
-    pos2.y = mod(p.y - mod_time * 0.1, 10.0) - 5.0;        // mod along y
+    pos2.x = mod(p.x - mod_time * 0.1, 10.0) - 5.0;        // mod along y
 
     for(int i = 0; i < 3; ++i)
     {
@@ -125,9 +125,12 @@ vec2 trace(in vec3 ro, in vec3 rd)
 //vec4 c = vec4(-35.0, -1.0, 3.0, 0.0);
 vec4 c = vec4(
             1.2 * mod_time - 4.0,
-            2.0 + mod_time,
+            -10.0 * sin(0.1 * mod_time),
+            //30.0 * sin(mod_time),
+            //32.2 * exp(1.25 * sin(4.0 * mod_time)),
+            //smoothstep(-30, 30, 5 * sin(mod_time)),
             12.0 - mod_time - 0.2 * cos(2.0 * mod_time),
-              0.125
+            0.0
               //0.2 + smoothstep(0.0, 0.5, (2.0 * mod_time))
 );
 //vec4 c = vec4(cos(mod_time), 
@@ -153,7 +156,14 @@ void main_image(out vec4 frag_color, in vec2 frag_coord)
     // artifact killah
     mod_time = mod(i_time, 0.5 * 62.8318);
     // ray 
-    vec3 ro = vec3(cos(mod_time * c.w + c.x) * c.z, c.y, sin(mod_time * c.w + c.x) * c.z);
+    //vec3 ro = vec3(cos(mod_time * c.w + c.x) * c.z, c.y, sin(mod_time * c.w + c.x) * c.z);
+    vec3 ro = vec3(
+        cos(mod_time * c.w + c.x) * c.z, 
+        cos(0.45 * mod_time) * -8.0,
+        //cos(0.125 * mod_time) * -10.0,
+        //smoothstep(c.y -30, c.y + 30, mod_time), 
+        sin(mod_time * c.w + c.x) * c.z
+    );
     // camera 
     vec3 cw = normalize(vec3(0.0) - ro);
     vec3 cu = normalize(cross(cw, vec3(0.0, 1.0, 0.0)));

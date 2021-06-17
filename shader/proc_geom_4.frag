@@ -70,11 +70,11 @@ vec2 geom(vec3 p, float mat_id)
 {
     vec2 t, h;
 
-    t = vec2(box(abs(p) - vec3(0, 0, 1), vec3(2.2, 0.3, 0.7)), mat_id);
-    t.x = min(0.6 * cylinder(abs(abs(p) - vec3(0.5, 0, 0)) - vec3(0.5, 0, 1), 0.1), t.x);
+    t = vec2(box(abs(p) - vec3(0, 0, 1), vec3(2.2, 0.4, 0.7)), mat_id);
+    t.x = min(0.6 * cylinder(abs(abs(p) - vec3(0.5, 2, 0)) - vec3(0.5, 1, 1), 0.1), t.x);
     if(mat_id > MAT3)
-        glow2 += 0.001 / (0.1 * t.x * t.x * (1000.0 - anim1 * 99.8));
-        //glow2 += 0.01 / (0.1 + pow(abs(t.x), 0.2));
+        //glow2 += (0.001 / (0.03 * t.x * t.x * (2000.0 - (0.2 * anim1)))) * 0.5; // * 99.8));
+        glow2 += 0.01 / (0.1 + pow(abs(t.x), -0.2));
     h = vec2(box(abs(p) - vec3(0, 0, 1), vec3(2.0, 0.5, 0.5)), MAT2);
     t = (t.x < h.x) ? t : h;        // merge 
     h = vec2(box(p, vec3(1.8, 0.2, 2.8)), MAT3);
@@ -90,16 +90,18 @@ vec2 map(vec3 p)
 {
     pos2 = p;
     //pos2.z = mod(p.z - mod_time * 0.2, 10.0) - 5.0;        // mod along x
-    pos2.x = mod(p.x - mod_time * 0.1, 10.0) - 5.0;        // mod along y
+    pos2.x = mod(p.x - mod_time * 0.1, 10.0) - 5.0;        // mod along x
+    //pos2.y = mod(p.y - mod_time * 0.1, 1.0) - 0.5;        // mod along y
 
     for(int i = 0; i < 3; ++i)
     {
-        pos2 = abs(pos2) - vec3(2.5, 1.7, 1.0);
+        pos2 = abs(pos2) - vec3(2.5, 1.9, 1.0);
         pos2.xy *= rotate(cos(p.y * 0.05) * 0.5);
-        pos2.yz *= rotate(0.5 * sin(0.75 * mod_time + 2.5));
+        pos2.yz *= rotate(0.5 * sin(0.45 * mod_time + 2.5));
+        pos2.x += 0.4;
     }
     //vec2 t = geom(p.xyz, MAT3);         // call this to render geometry alone with no transforms
-    vec2 t = geom(pos2, MAT4);
+    vec2 t = geom(pos2, MAT1);
 
     return t;
 }
@@ -173,8 +175,9 @@ void main_image(out vec4 frag_color, in vec2 frag_coord)
 
     rd = mat3(cu, cv, cw) * normalize(vec3(uv, 0.5));
 
-    col = fog = vec3(0.1, 0.1, 0.24) - length(uv) * 0.02 - rd.z * 0.18;
-    light_dir = normalize(vec3(0.2, 0.5, -0.5));
+    col = fog = vec3(0.01, 0.01, 0.14) - length(uv) * 0.02 - rd.z * 0.18;
+    light_dir = normalize(vec3(-0.2 * cos(mod_time * 0.4), -2.0 * sin(mod_time * 0.25), -0.5));
+    //light_dir = normalize(vec3(0.2, 0.5, -0.5));
     // trace it 
     vec2 z = trace(ro, rd);
     float t = z.x;
@@ -189,7 +192,7 @@ void main_image(out vec4 frag_color, in vec2 frag_coord)
         );
                 
         // these colors are actually quite ugly...
-        albedo = vec3(1, 0.0, 0.1);
+        albedo = vec3(1, 0.5, 0.0);
         if(z.y > MAT1)
             albedo = vec3(1.0, 0.0, 0.0);
         if(z.y > MAT2)

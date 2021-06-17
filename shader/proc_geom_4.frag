@@ -29,7 +29,7 @@ float diffuse, fresnel, specular, glow=0, glow2=0;
 vec3 pos2, pos3;
 float attr = 0;
 // animation
-float anim1, anim2;
+float anim1=0, anim2=0;
 
 // artifact killah
 vec2 eps = vec2(0.00003, -0.00003);
@@ -72,13 +72,15 @@ vec2 geom(vec3 p, float mat_id)
 
     t = vec2(box(abs(p) - vec3(0, 0, 1), vec3(2.2, 0.3, 0.7)), mat_id);
     t.x = min(0.6 * cylinder(abs(abs(p) - vec3(0.5, 0, 0)) - vec3(0.5, 0, 1), 0.1), t.x);
-    if(mat_id < MAT3)
-        glow2 += 0.1 / (0.1 + pow(abs(t.x), 2));
+    if(mat_id > MAT3)
+        glow2 += 0.001 / (0.1 * t.x * t.x * (1000.0 - anim1 * 99.8));
+        //glow2 += 0.01 / (0.1 + pow(abs(t.x), 0.2));
     h = vec2(box(abs(p) - vec3(0, 0, 1), vec3(2.0, 0.5, 0.5)), MAT2);
     t = (t.x < h.x) ? t : h;        // merge 
     h = vec2(box(p, vec3(1.8, 0.2, 2.8)), MAT3);
+    //glow += 0.001 / (0.1 * h.x * h.x * 4000.0);
     t = (t.x < h.x) ? t : h;            // merge 
-    t.x *= 0.7;
+    t.x *= 0.6;
 
     return t;
 }

@@ -162,8 +162,9 @@ void main_image(out vec4 frag_color, in vec2 frag_coord)
     // ray 
     //vec3 ro = vec3(cos(mod_time * c.w + c.x) * c.z, c.y, sin(mod_time * c.w + c.x) * c.z);
     vec3 ro = vec3(
-        cos(mod_time * c.w + c.x) * c.z, 
-        cos(0.45 * mod_time) * -8.0,
+        //cos(mod_time * c.w + c.x) * c.z, 
+        cos(0.45 * mod_time) * 3.0 - 4.0,
+        cos(0.25 * mod_time) * -8.0,
         //cos(0.125 * mod_time) * -10.0,
         //smoothstep(c.y -30, c.y + 30, mod_time), 
         sin(mod_time * c.w + c.x) * c.z

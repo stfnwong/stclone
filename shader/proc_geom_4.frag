@@ -75,11 +75,9 @@ vec2 geom(vec3 p, float mat_id)
     if(mat_id < MAT3)
         glow2 += 0.1 / (0.1 + pow(abs(t.x), 2));
     h = vec2(box(abs(p) - vec3(0, 0, 1), vec3(2.0, 0.5, 0.5)), MAT2);
-    // merge
-    t = (t.x < h.x) ? t : h;
-
+    t = (t.x < h.x) ? t : h;        // merge 
     h = vec2(box(p, vec3(1.8, 0.2, 2.8)), MAT3);
-    t = (t.x < h.x) ? t : h;
+    t = (t.x < h.x) ? t : h;            // merge 
     t.x *= 0.7;
 
     return t;
@@ -89,6 +87,8 @@ vec2 geom(vec3 p, float mat_id)
 vec2 map(vec3 p)
 {
     pos2 = p;
+    //pos2.z = mod(p.z - mod_time * 0.2, 10.0) - 5.0;        // mod along x
+    pos2.y = mod(p.y - mod_time * 0.1, 10.0) - 5.0;        // mod along y
 
     for(int i = 0; i < 3; ++i)
     {
@@ -123,10 +123,23 @@ vec2 trace(in vec3 ro, in vec3 rd)
 // orbit camera coords
 // (x-axis offset (radians), y position, z position, rotation vel)
 //vec4 c = vec4(-35.0, -1.0, 3.0, 0.0);
-vec4 c = vec4(2.0 * sin(0.25 * mod_time + 10.0), 
-              8.0 * cos(0.5 * mod_time + 10.0), 
-10.0,
-              0.2 * sin(2.4 * mod_time + 1.0));
+vec4 c = vec4(
+            1.2 * mod_time - 4.0,
+            2.0 + mod_time,
+            12.0 - mod_time - 0.2 * cos(2.0 * mod_time),
+              0.125
+              //0.2 + smoothstep(0.0, 0.5, (2.0 * mod_time))
+);
+//vec4 c = vec4(cos(mod_time), 
+//              2.0 - exp(1.0 - mod_time * mod_time),
+//              6.8 + exp(1.0 - mod_time), 
+//              0.1
+//);
+
+//vec4 c = vec4(-3.0 * sin(0.25 * mod_time + 10.0), 
+//              -8.0 * cos(2.5 * mod_time + 10.0), 
+//              10.0,
+//              0.2 * sin(2.4 * mod_time + 1.0));
 
 #define ambient(d) clamp(map(ray_pos * norm * d).x / d, 0.0, 1.0)
 #define subsurface(d) smoothstep(0.0, 1.0, map(ray_pos + light_dir * d).x / d)
@@ -148,7 +161,7 @@ void main_image(out vec4 frag_color, in vec2 frag_coord)
 
     rd = mat3(cu, cv, cw) * normalize(vec3(uv, 0.5));
 
-    col = fog = vec3(0.1, 0.1, 0.6) - length(uv) * 0.1 - rd.y * 0.2;
+    col = fog = vec3(0.1, 0.1, 0.4) - length(uv) * 0.01 - rd.z * 0.1;
     light_dir = normalize(vec3(0.2, 0.5, -0.5));
     // trace it 
     vec2 z = trace(ro, rd);
@@ -171,7 +184,7 @@ void main_image(out vec4 frag_color, in vec2 frag_coord)
             albedo = vec3(0.0, 0.0, 1.0);
         if(z.y >= MAT3)
             albedo = vec3(0.0, 1.0, 0.0);
-        if(z.y >= MAT4)
+        if(z.y >= MAT4)     // background mostly
             albedo = mix(vec3(0.5, 0.7, 0.7), vec3(0.9, 0.9, 0.7), 0.5 + 0.5 * sin(pos3.y * 7.0));
         diffuse = max(0.0, dot(norm, light_dir));
         fresnel = pow(1.0 + dot(norm, rd), 4.0);

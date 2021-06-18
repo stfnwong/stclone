@@ -192,8 +192,6 @@ void main_image(out vec4 frag_color, in vec2 frag_coord)
             eps.xxx * map(ray_pos + eps.xxx).x
         );
                 
-        // these colors are actually quite ugly...
-        albedo = vec3(1, 0.5, 0.0);
         if(z.y > MAT1)
             albedo = vec3(1.0, 0.0, 0.0);
         if(z.y > MAT2)

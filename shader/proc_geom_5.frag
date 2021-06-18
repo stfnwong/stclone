@@ -41,21 +41,10 @@ float box(vec3 p, vec3 r)
     p = abs(p) - r;
     return max(max(p.x, p.y), p.z);
 }
+
 float cylinder(vec3 p, float s)
 {
     return length(p) - s;
-}
-
-// ======== TRANSFORMS ======== //
-float smin(float a, float b, float k)
-{
-    float h = max(0.0, k - abs(a-b));
-    return min(a, b) - h * h * 0.25 / k;
-}
-
-mat2 rotate(float r)
-{
-    return mat2(cos(r), sin(r), -sin(r), cos(r));
 }
 
 // ======== SCENE ======== //
@@ -70,36 +59,16 @@ vec2 geom(vec3 p, float mat_id)
 {
     vec2 t, h;
 
-    t = vec2(box(abs(p) - vec3(0, 0, 1), vec3(2.2, 0.3, 0.7)), mat_id);
-    t.x = min(0.6 * cylinder(abs(abs(p) - vec3(0.5, 0, 0)) - vec3(0.5, 0, 1), 0.1), t.x);
-    if(mat_id > MAT3)
-        glow2 += 0.001 / (0.1 * t.x * t.x * (1000.0 - anim1 * 99.8));
-        //glow2 += 0.01 / (0.1 + pow(abs(t.x), 0.2));
-    h = vec2(box(abs(p) - vec3(0, 0, 1), vec3(2.0, 0.5, 0.5)), MAT2);
-    t = (t.x < h.x) ? t : h;        // merge 
-    h = vec2(box(p, vec3(1.8, 0.2, 2.8)), MAT3);
-    //glow += 0.001 / (0.1 * h.x * h.x * 4000.0);
-    t = (t.x < h.x) ? t : h;            // merge 
-    t.x *= 0.6;
+    //t = vec2(box(abs(p) - vec3(0, 1, 0), vec3(0.0, -0.0, -0.0)), mat_id);
+    t = vec2(box(abs(p) + vec3(0.5, 0.5, 0.5), vec3(1, 1, 1)), mat_id);
+    t.x = max(t.x, -box(p, vec3(0.5, 0.1, 0.1)));
 
     return t;
 }
 
-
 vec2 map(vec3 p)
 {
-    pos2 = p;
-    //pos2.z = mod(p.z - mod_time * 0.2, 10.0) - 5.0;        // mod along x
-    pos2.x = mod(p.x - mod_time * 0.1, 10.0) - 5.0;        // mod along y
-
-    for(int i = 0; i < 3; ++i)
-    {
-        pos2 = abs(pos2) - vec3(2.5, 1.7, 1.0);
-        pos2.xy *= rotate(cos(p.y * 0.05) * 0.5);
-        pos2.yz *= rotate(0.5 * sin(0.75 * mod_time + 2.5));
-    }
-    //vec2 t = geom(p.xyz, MAT3);         // call this to render geometry alone with no transforms
-    vec2 t = geom(pos2, MAT4);
+    vec2 t = geom(p.xyz, MAT1);         // call this to render geometry alone with no transforms
 
     return t;
 }
@@ -122,29 +91,11 @@ vec2 trace(in vec3 ro, in vec3 rd)
     return t;
 }
 
+
+
 // orbit camera coords
 // (x-axis offset (radians), y position, z position, rotation vel)
-//vec4 c = vec4(-35.0, -1.0, 3.0, 0.0);
-vec4 c = vec4(
-            1.2 * mod_time - 4.0,
-            -10.0 * sin(0.1 * mod_time),
-            //30.0 * sin(mod_time),
-            //32.2 * exp(1.25 * sin(4.0 * mod_time)),
-            //smoothstep(-30, 30, 5 * sin(mod_time)),
-            12.0 - mod_time - 0.2 * cos(2.0 * mod_time),
-            0.0
-              //0.2 + smoothstep(0.0, 0.5, (2.0 * mod_time))
-);
-//vec4 c = vec4(cos(mod_time), 
-//              2.0 - exp(1.0 - mod_time * mod_time),
-//              6.8 + exp(1.0 - mod_time), 
-//              0.1
-//);
-
-//vec4 c = vec4(-3.0 * sin(0.25 * mod_time + 10.0), 
-//              -8.0 * cos(2.5 * mod_time + 10.0), 
-//              10.0,
-//              0.2 * sin(2.4 * mod_time + 1.0));
+vec4 c = vec4(1.0, -1.0, 2.0, 0.1);
 
 #define ambient(d) clamp(map(ray_pos * norm * d).x / d, 0.0, 1.0)
 #define subsurface(d) smoothstep(0.0, 1.0, map(ray_pos + light_dir * d).x / d)
@@ -153,19 +104,21 @@ void main_image(out vec4 frag_color, in vec2 frag_coord)
 {
     vec2 uv = vec2(frag_coord.x / i_resolution.x, frag_coord.y / i_resolution.y);
     uv -= 0.5;
-    uv /= vec2(i_resolution.y / i_resolution.x, 1.0);
+    uv /= vec2(i_resolution.y / i_resolution.x, 1.2);
 
     // artifact killah
     mod_time = mod(i_time, 0.5 * 62.8318);
     // ray 
     //vec3 ro = vec3(cos(mod_time * c.w + c.x) * c.z, c.y, sin(mod_time * c.w + c.x) * c.z);
-    vec3 ro = vec3(
-        cos(mod_time * c.w + c.x) * c.z, 
-        cos(0.45 * mod_time) * -8.0,
-        //cos(0.125 * mod_time) * -10.0,
-        //smoothstep(c.y -30, c.y + 30, mod_time), 
-        sin(mod_time * c.w + c.x) * c.z
-    );
+    //vec3 ro = vec3(
+    //    //cos(mod_time * c.w + c.x) * c.z, 
+    //    cos(0.45 * mod_time) * 3.0 - 4.0,
+    //    cos(0.25 * mod_time) * -8.0,
+    //    //cos(0.125 * mod_time) * -10.0,
+    //    //smoothstep(c.y -30, c.y + 30, mod_time), 
+    //    sin(mod_time * c.w + c.x) * c.z
+    //);
+    vec3 ro = vec3(cos(mod_time * c.w + c.x) * c.z, c.y, sin(mod_time * c.w + c.x) * c.z);
     // camera 
     vec3 cw = normalize(vec3(0.0) - ro);
     vec3 cu = normalize(cross(cw, vec3(0.0, 1.0, 0.0)));
@@ -173,7 +126,8 @@ void main_image(out vec4 frag_color, in vec2 frag_coord)
 
     rd = mat3(cu, cv, cw) * normalize(vec3(uv, 0.5));
 
-    col = fog = vec3(0.1, 0.1, 0.24) - length(uv) * 0.02 - rd.z * 0.18;
+    col = fog = vec3(0.01, 0.01, 0.14) - length(uv) * 0.01 - rd.z * 0.2;
+    //light_dir = normalize(vec3(-0.2 * cos(mod_time * 0.4), -2.0 * sin(mod_time * 0.25), -0.5));
     light_dir = normalize(vec3(0.2, 0.5, -0.5));
     // trace it 
     vec2 z = trace(ro, rd);
@@ -188,6 +142,8 @@ void main_image(out vec4 frag_color, in vec2 frag_coord)
             eps.xxx * map(ray_pos + eps.xxx).x
         );
                 
+        // these colors are actually quite ugly...
+        //albedo = vec3(1, 0.5, 0.0);
         if(z.y > MAT1)
             albedo = vec3(1.0, 0.0, 0.0);
         if(z.y > MAT2)

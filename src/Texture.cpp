@@ -27,5 +27,5 @@ void Texture::updateR32(const float* data)
 
 void Texture::release(void)
 {
-    glDeleteTextures(1, this->id);
+    glDeleteTextures(1, &this->id);
 }

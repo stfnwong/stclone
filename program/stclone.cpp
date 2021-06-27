@@ -66,10 +66,10 @@ void set_shader_constant(const std::string& cname, float x, float y)
 
 void set_shader_texture(const std::string& tex_name, Texture& texture)
 {
-    GLint tex_location = the_shader.getUniform(tex_name);
-    if(tex_location != -1)
+    uniforms.i_channel0 = the_shader.getUniform(tex_name);
+    if(uniforms.i_channel0 != -1)
     {
-        glProgramUniform1i(the_shader.getProgram(), tex_location, texture.unit);
+        glProgramUniform1i(the_shader.getProgram(), uniforms.i_channel0, texture.unit);
         glActiveTexture(GL_TEXTURE0 + texture.unit);        
         switch(texture.tex_type)
         {

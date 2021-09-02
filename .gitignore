@@ -12,3 +12,8 @@ tags
 
 # Now that there is python stuff, ignore compiled python stuff 
 *.pyc
+
+# If there are shaders in the base directory then ignore those 
+*.frag
+# But anything in the shader dir, keep it
+!shader/*.frag

@@ -1,5 +1,4 @@
 # Makefile for ShaderToy clone 
-# 
 #
 
 # OUTPUT DIRS
@@ -56,7 +55,7 @@ $(TESTS): $(TEST_OBJECTS) $(OBJECTS)
 
 
 # ==== PROGRAM TARGETS ==== #
-PROGRAMS=stclone
+PROGRAMS=stclone rtt
 PROGRAM_SOURCES = $(wildcard $(PROGRAM_DIR)/*.cpp)
 PROGRAM_OBJECTS = $(PROGRAM_SOURCES:$(PROGRAM_DIR)/%.cpp=$(OBJ_DIR)/%.o)
 
@@ -65,7 +64,7 @@ $(PROGRAM_OBJECTS) : $(OBJ_DIR)/%.o : $(PROGRAM_DIR)/%.cpp
 
 $(PROGRAMS): $(OBJECTS) $(PROGRAM_OBJECTS) 
 	$(CXX) $(LDFLAGS) $(OBJECTS) $(OBJ_DIR)/$@.o\
-		-o $(BIN_DIR)/$@ $(LIBS) $(TEST_LIBS)
+		-o $@ $(LIBS) $(TEST_LIBS)
 
 # Main targets 
 all : program test
@@ -80,6 +79,7 @@ program: $(PROGRAMS)
 clean:
 	rm -rfv *.o $(OBJ_DIR)/*.o 
 	rm -fv $(BIN_DIR)/*
+	rm $(PROGRAMS)
 
 print-%:
 	@echo $* = $($*)

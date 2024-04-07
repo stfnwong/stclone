@@ -10,5 +10,17 @@
 # Ignore tags 
 tags
 
+# Ignore ad-hoc notes
+notes
+
 # Now that there is python stuff, ignore compiled python stuff 
 *.pyc
+
+# Ignore LSP config 
+compile_commands.json
+.cache/
+
+# Ignore the program binaries
+stclone
+# This one is the render-to-texture prototype
+rtt

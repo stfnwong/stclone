@@ -51,6 +51,61 @@ struct Args
 Shader the_shader;
 ShaderUniforms uniforms;
 
+
+/*
+ * Framebuffer (test)
+ */
+bool frame_buffer(int width, int height)
+{
+    GLuint frame_buffer_name = 0;
+    glGenFramebuffers(1, &frame_buffer_name);
+    glBindFramebuffer(GL_FRAMEBUFFER, frame_buffer_name);
+
+    // Create a texture to hold the output 
+    GLuint rendered_texture;
+    glGenTextures(1, &rendered_texture);
+    glBindTexture(GL_TEXTURE_2D, rendered_texture); 
+
+    glTexImage2D(
+        GL_TEXTURE_2D, 
+        0, 
+        GL_RGB, 
+        (GLsizei) width, 
+        (GLsizei) height, 
+        0, 
+        GL_RGB, 
+        GL_UNSIGNED_BYTE, 
+        0
+    );
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+
+    // Also need a depth buffer
+
+    GLuint depth_render_buffer;
+    glGenRenderbuffers(1, &depth_render_buffer);
+    glBindRenderbuffer(GL_RENDERBUFFER, depth_render_buffer);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, (GLsizei) width, (GLsizei) height);
+    glFramebufferRenderbuffer(
+            GL_FRAMEBUFFER, 
+            GL_DEPTH_ATTACHMENT, 
+            GL_RENDERBUFFER, 
+            depth_render_buffer
+    );
+
+    // Configure the frame buffer 
+    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, rendered_texture, 0);
+
+    // set the list of draw buffers 
+    GLenum draw_buffers[1] = {GL_COLOR_ATTACHMENT0};
+    glDrawBuffers(1, draw_buffers);     // first parameter is size of draw_buffers
+
+    return glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE ? true : false;
+}
+
+
+
 /*
  * render()
  */
@@ -74,7 +129,7 @@ int create_shader(const std::string& vert_shader_fname, const std::string& frag_
     glBindVertexArray(vao);
 
     // full screen quad
-    float triangles[] = {
+    float quad_vertex_buffer[] = {
         -1.0f, -1.0f,
          1.0f, -1.0f,
          1.0f,  1.0f,
@@ -85,7 +140,7 @@ int create_shader(const std::string& vert_shader_fname, const std::string& frag_
 
     glGenBuffers(1, &quad);
     glBindBuffer(GL_ARRAY_BUFFER, quad);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(triangles), triangles, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(quad_vertex_buffer), quad_vertex_buffer, GL_STATIC_DRAW);
 
     // create shader 
     std::cout << "Using vertex shader [" << vert_shader_fname << "]" << std::endl;

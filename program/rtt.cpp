@@ -7,7 +7,12 @@
 #include <GL/glew.h>
 #include <SDL2/SDL.h>
 
+// input args
+#include <getopt.h>
+
+
 #include "Shader.hpp"
+#include "Util.hpp"
 
 
 Shader the_shader;		// TODO: what to do about this
@@ -27,6 +32,8 @@ ShaderUniforms uniforms;
 // TODO: this could end up a library function...
 int create_shader(const std::string& vert_shader_fname, const std::string& frag_shader_fname)
 {
+
+
     int status;
     // set up vertex buffer 
     GLuint vao, quad;
@@ -85,6 +92,67 @@ int create_shader(const std::string& vert_shader_fname, const std::string& frag_
 
 int main(int argc, char *argv[])
 {
+    Args args;
+    const char* const short_args = "vhi:o:W:H:";
+    const struct option long_args[] = {0};
+    int argn = 1;
+    int status;
+
+    char* endptr;
+    long number;
+
+    // get args 
+    while(1)
+    {
+        const auto opt = getopt_long(argc, argv, short_args, long_args, nullptr);
+        if(opt == -1)
+            break;
+
+        switch(opt)
+        {
+            // NOTE: does nothing as of now
+            case 'v':
+                args.verbose = true;
+                break;
+
+            case 'h':
+                std::cout << "TODO : write help text and print here" << std::endl;
+                break;
+
+            case 'W':
+                number = strtol(argv[argn+1], &endptr, 10);    // string to int...
+                args.width = (int) number;
+                argn++;
+                break;
+
+            case 'H':
+                number = strtol(argv[argn+1], &endptr, 10);    // string to int...
+                args.height = (int) number;
+                argn++;
+                break;
+
+            default:
+                std::cerr << "Unknown option " << std::string(optarg) << "(arg " << argn << ")" << std::endl;
+                exit(-1);
+                break;
+        }
+        argn++;
+    }
+
+    //args.frag_shader_fname = std::string(argv[argc-1]);
+    // TODO: hardcoding these for expediency
+    args.frag_shader_fname = "program/rtt.frag";
+    args.vert_shader_fname = "program/rtt.vert";
+
+    // Set up SDL 
+    SDL_Window* window;
+    SDL_GLContext gl_ctx;
+
+    window = create_window(args.frag_shader_fname.c_str(), args.width, args.height);
+    gl_ctx = SDL_GL_CreateContext(window);
+    glewExperimental = GL_TRUE;
+    glewInit();
+
 	// TODO: make parameters...
 	int height = 768;
 	int width = 1024;

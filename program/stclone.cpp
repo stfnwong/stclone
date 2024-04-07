@@ -27,25 +27,6 @@ struct ShaderUniforms
     GLuint i_mouse;
 };
 
-/*
- * Command line args
- */
-struct Args
-{
-    std::string vert_shader_fname;
-    std::string frag_shader_fname;
-    int width;
-    int height;
-    bool verbose;
-
-    Args() : 
-        vert_shader_fname("shader/default.vert"), 
-        frag_shader_fname("shader/default.frag"),
-        width(DISP_W),
-        height(DISP_H),
-        verbose(false) 
-    {} 
-};
 
 // Shader
 Shader the_shader;
@@ -189,6 +170,7 @@ int main(int argc, char* argv[])
 
     char* endptr;
     long number;
+
     // get args 
     while(1)
     {

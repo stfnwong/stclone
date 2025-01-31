@@ -94,6 +94,7 @@ void main(void)
         vec3 nor = normals(pos);
 
         col = vec3(0.2, 0.122, 0.4);
+        col += vec3(1.0, 0.2, 0.2) * clamp(nor.y, 0.0, 1.0);
         col *= exp(-tr * 0.102);
     }
 

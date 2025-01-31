@@ -12,3 +12,9 @@ tags
 
 # Now that there is python stuff, ignore compiled python stuff 
 *.pyc
+
+# Ignore clangd cache 
+.cache/
+
+# Ignore build stuff
+compile_commands.json

@@ -45,6 +45,19 @@ float map(in vec3 p)
 }
 
 
+vec3 normals(in vec3 p)
+{
+    vec2 e = vec2(EPS, 1.0);
+    vec3 gr = vec3(
+            map(p + e.xyy) - map(p - e.xyy),
+            map(p + e.yxy) - map(p - e.yxy),
+            map(p + e.yyx) - map(p - e.yyx)
+    );
+
+    return normalize(gr);
+}
+
+
 float trace(vec3 ro, vec3 rd)
 {
     float d, t;
@@ -75,8 +88,14 @@ void main(void)
     vec3 col = vec3(0.0);
     float tr = trace(ro, rd);
 
-    if(tr > MAX)
-        col = vec3(0.7, 0.0, 0.4);
+    if(tr < MAX)
+    {
+        vec3 pos = ro + tr * rd;
+        vec3 nor = normals(pos);
+
+        col = vec3(0.2, 0.122, 0.4);
+        col *= exp(-tr * 0.102);
+    }
 
     gl_FragColor = vec4(col, 1.0);
 }

@@ -1,8 +1,16 @@
 /*
  * Render to texture test
+ *
+ * Two passes per frame:
+ *   Buffer A : reads its own output from the previous frame, writes to a texture
+ *   Image    : reads Buffer A, writes to the window
+ *
+ * Buffer A uses a pair of textures that swap roles each frame (ping-pong), since
+ * a draw can't sample the texture it is rendering into.
  */
 
 #include <iostream>
+#include <chrono>
 
 #include <GL/glew.h>
 #include <SDL2/SDL.h>
@@ -15,32 +23,51 @@
 #include "Util.hpp"
 
 
-Shader the_shader;		// TODO: what to do about this
-
+/*
+ * Shader uniforms. Locations are per-program, so each pass has its own copy.
+ */
 struct ShaderUniforms
 {
-    GLuint i_time;
-    GLuint i_time_delta;
-    GLuint i_resolution;
-    GLuint i_mouse;
+    GLint i_time;
+    GLint i_time_delta;
+    GLint i_resolution;
+    GLint i_mouse;
+    GLint i_frame;
+    GLint i_channel0;
+};
+
+/*
+ * RenderTarget
+ * A texture with a framebuffer pointing at it
+ */
+struct RenderTarget
+{
+    GLuint fbo = 0;
+    GLuint tex = 0;
+    int width  = 0;
+    int height = 0;
 };
 
 
-ShaderUniforms uniforms;
+Shader buf_a_shader;
+Shader image_shader;
+ShaderUniforms buf_a_uniforms;
+ShaderUniforms image_uniforms;
+
+RenderTarget buf_a[2];      // ping-pong pair
+int cur = 0;                // index of the target written this frame
 
 
-// TODO: this could end up a library function...
-int create_shader(const std::string& vert_shader_fname, const std::string& frag_shader_fname)
+/*
+ * create_quad()
+ * Full screen quad as two triangles. Attribute 0 is bound to "position" in Shader::init()
+ */
+GLuint create_quad(void)
 {
-
-
-    int status;
-    // set up vertex buffer 
-    GLuint vao, quad;
+    GLuint vao, vbo;
     glGenVertexArrays(1, &vao);
     glBindVertexArray(vao);
 
-    // full screen quad
     float quad_vertex_buffer[] = {
         -1.0f, -1.0f,
          1.0f, -1.0f,
@@ -50,58 +77,127 @@ int create_shader(const std::string& vert_shader_fname, const std::string& frag_
          1.0f,  1.0f,
     };
 
-    glGenBuffers(1, &quad);
-    glBindBuffer(GL_ARRAY_BUFFER, quad);
+    glGenBuffers(1, &vbo);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo);
     glBufferData(GL_ARRAY_BUFFER, sizeof(quad_vertex_buffer), quad_vertex_buffer, GL_STATIC_DRAW);
 
-    // create shader 
-    std::cout << "Using vertex shader [" << vert_shader_fname << "]" << std::endl;
-    std::cout << "Using fragment shader [" << frag_shader_fname << "]" << std::endl;
-    
-    status = the_shader.load(vert_shader_fname, frag_shader_fname);
-    if(status < 0 || !the_shader.ok())
-    {
-        std::cerr << "[" << __func__ << "] failed to load shader files [" 
-            << vert_shader_fname << "] and [" << frag_shader_fname 
-            << "]" << std::endl;
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, 0);
+    glEnableVertexAttribArray(0);
 
+    return vao;
+}
+
+/*
+ * create_render_target()
+ */
+bool create_render_target(RenderTarget& rt, int width, int height)
+{
+    rt.width = width;
+    rt.height = height;
+
+    // Float format so buffers can hold values outside [0, 1], like Shadertoy
+    glGenTextures(1, &rt.tex);
+    glBindTexture(GL_TEXTURE_2D, rt.tex);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, width, height, 0, GL_RGBA, GL_FLOAT, nullptr);
+    // No mipmaps, so MIN_FILTER must not be a mipmap filter (the default is)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+    glGenFramebuffers(1, &rt.fbo);
+    glBindFramebuffer(GL_FRAMEBUFFER, rt.fbo);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, rt.tex, 0);
+
+    bool ok = glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE;
+
+    // start from black
+    glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+    glClear(GL_COLOR_BUFFER_BIT);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    return ok;
+}
+
+/*
+ * load_pass_shader()
+ */
+int load_pass_shader(Shader& shader, ShaderUniforms& uniforms, const std::string& vert_fname, const std::string& frag_fname)
+{
+    int status = shader.load(vert_fname, frag_fname);
+    if(status < 0 || !shader.ok())
+    {
+        std::cerr << "[" << __func__ << "] failed to load shader files ["
+            << vert_fname << "] and [" << frag_fname << "]" << std::endl;
         return -1;
     }
-    the_shader.use();
 
-    // connect shader inputs and outputs
-    GLint pos;
-
-    pos = the_shader.getAttrib("position");
-    glVertexAttribPointer(pos, 2, GL_FLOAT, GL_FALSE, 0, 0);
-    glEnableVertexAttribArray(pos);
-
-    pos = the_shader.getAttrib("position_out");
-    glVertexAttribPointer(pos, 2, GL_FLOAT, GL_FALSE, 0, 0);
-    glEnableVertexAttribArray(pos);
-
-
-    uniforms.i_time       = the_shader.getUniform("i_time");
-    uniforms.i_time_delta = the_shader.getUniform("i_time_delta");
-    uniforms.i_resolution = the_shader.getUniform("i_resolution");
-    uniforms.i_mouse      = the_shader.getUniform("i_mouse");
+    uniforms.i_time       = shader.getUniform("i_time");
+    uniforms.i_time_delta = shader.getUniform("i_time_delta");
+    uniforms.i_resolution = shader.getUniform("i_resolution");
+    uniforms.i_mouse      = shader.getUniform("i_mouse");
+    uniforms.i_frame      = shader.getUniform("i_frame");
+    uniforms.i_channel0   = shader.getUniform("i_channel0");
 
     return 0;
 }
 
+/*
+ * set_common_uniforms()
+ * Uniforms belong to a program, so this must be called after each use()
+ */
+void set_common_uniforms(const ShaderUniforms& uniforms, float time_now, float time_diff, const float* mouse, int frame, int width, int height)
+{
+    glUniform1f(uniforms.i_time, time_now);
+    glUniform1f(uniforms.i_time_delta, time_diff);
+    glUniform2f(uniforms.i_resolution, (float) width, (float) height);
+    glUniform4fv(uniforms.i_mouse, 1, mouse);
+    glUniform1i(uniforms.i_frame, frame);
+}
 
+/*
+ * render()
+ */
+void render(float time_now, float time_diff, const float* mouse, int frame, int win_w, int win_h)
+{
+    int prev = 1 - cur;
+
+    // ---- Pass 1: Buffer A, reads last frame's A, writes this frame's A
+    glBindFramebuffer(GL_FRAMEBUFFER, buf_a[cur].fbo);
+    glViewport(0, 0, buf_a[cur].width, buf_a[cur].height);
+    buf_a_shader.use();
+    set_common_uniforms(buf_a_uniforms, time_now, time_diff, mouse, frame, buf_a[cur].width, buf_a[cur].height);
+
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, buf_a[prev].tex);
+    glUniform1i(buf_a_uniforms.i_channel0, 0);      // sampler reads from unit 0
+
+    glDrawArrays(GL_TRIANGLES, 0, 6);
+
+    // ---- Pass 2: Image, reads this frame's A, writes the window
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glViewport(0, 0, win_w, win_h);
+    image_shader.use();
+    set_common_uniforms(image_uniforms, time_now, time_diff, mouse, frame, win_w, win_h);
+
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, buf_a[cur].tex);
+    glUniform1i(image_uniforms.i_channel0, 0);
+
+    glDrawArrays(GL_TRIANGLES, 0, 6);
+
+    cur = prev;     // swap
+}
+
+
+// ======== ENTRY POINT  ======== //
 int main(int argc, char *argv[])
 {
     Args args;
-    const char* const short_args = "vhi:o:W:H:";
-    const struct option long_args[] = {0};
-    int argn = 1;
-    int status;
+    const char* const short_args = "vhW:H:";
+    const struct option long_args[] = {{0, 0, 0, 0}};
 
-    char* endptr;
-    long number;
-
-    // get args 
+    // get args
     while(1)
     {
         const auto opt = getopt_long(argc, argv, short_args, long_args, nullptr);
@@ -110,133 +206,137 @@ int main(int argc, char *argv[])
 
         switch(opt)
         {
-            // NOTE: does nothing as of now
             case 'v':
                 args.verbose = true;
                 break;
 
             case 'h':
-                std::cout << "TODO : write help text and print here" << std::endl;
-                break;
+                std::cout << "Usage: " << argv[0] << " [-W width] [-H height]" << std::endl;
+                exit(0);
 
             case 'W':
-                number = strtol(argv[argn+1], &endptr, 10);    // string to int...
-                args.width = (int) number;
-                argn++;
+                args.width = (int) strtol(optarg, nullptr, 10);
                 break;
 
             case 'H':
-                number = strtol(argv[argn+1], &endptr, 10);    // string to int...
-                args.height = (int) number;
-                argn++;
+                args.height = (int) strtol(optarg, nullptr, 10);
                 break;
 
             default:
-                std::cerr << "Unknown option " << std::string(optarg) << "(arg " << argn << ")" << std::endl;
                 exit(-1);
-                break;
         }
-        argn++;
     }
 
-    //args.frag_shader_fname = std::string(argv[argc-1]);
     // TODO: hardcoding these for expediency
-    args.frag_shader_fname = "program/rtt.frag";
-    args.vert_shader_fname = "program/rtt.vert";
+    const std::string vert_fname  = "program/rtt.vert";
+    const std::string buf_a_fname = "program/rtt_buf_a.frag";
+    const std::string image_fname = "program/rtt_image.frag";
 
-    // Set up SDL 
+    // Set up SDL
     SDL_Window* window;
     SDL_GLContext gl_ctx;
 
-    window = create_window(args.frag_shader_fname.c_str(), args.width, args.height);
+    window = create_window("rtt", args.width, args.height);
     gl_ctx = SDL_GL_CreateContext(window);
+    if(!gl_ctx)
+    {
+        std::cerr << "Failed to create GL context: " << SDL_GetError() << std::endl;
+        exit(-1);
+    }
     glewExperimental = GL_TRUE;
     glewInit();
 
-	// TODO: make parameters...
-	int height = 768;
-	int width = 1024;
+    create_quad();
 
-	// Create a frame buffer here 
-	GLuint frame_buffer_name = 0;
-	glGenFramebuffers(1, &frame_buffer_name);     // TODO: segfault here
-	glBindFramebuffer(GL_FRAMEBUFFER, frame_buffer_name);
+    for(int i = 0; i < 2; ++i)
+    {
+        if(!create_render_target(buf_a[i], args.width, args.height))
+        {
+            std::cerr << "Failed to create framebuffer " << i << std::endl;
+            exit(-1);
+        }
+    }
 
-	// Create a texture to render to
-	GLuint rendered_texture;
-	glGenTextures(1, &rendered_texture);
-	glBindTexture(GL_TEXTURE_2D, rendered_texture);
+    if(load_pass_shader(buf_a_shader, buf_a_uniforms, vert_fname, buf_a_fname) < 0)
+        exit(-1);
+    if(load_pass_shader(image_shader, image_uniforms, vert_fname, image_fname) < 0)
+        exit(-1);
 
+    bool running = true;
+    bool paused = false;
+    int frame = 0;
+    auto start = std::chrono::high_resolution_clock::now();
+    auto prev = start;
+    float mouse[4] = {0.0f, 0.0f, 0.0f, 0.0f};
 
-	glTexImage2D(
-		GL_TEXTURE_2D,
-		0,
-		GL_RGB,
-		(GLsizei) width,
-		(GLsizei) height,
-		0,
-		GL_RGB,
-		GL_UNSIGNED_BYTE,
-		0
-	);
+    while(running)
+    {
+        SDL_Event event;
 
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        while(SDL_PollEvent(&event))
+        {
+            switch(event.type)
+            {
+                case SDL_MOUSEBUTTONDOWN:
+                    if(event.button.button == SDL_BUTTON_LEFT)
+                    {
+                        mouse[2] = mouse[0];
+                        mouse[3] = mouse[1];
+                    }
+                    break;
 
-	// Get a depth buffer 
-	GLuint depth_render_buffer;
-	glGenRenderbuffers(1, &depth_render_buffer);
-	glBindRenderbuffer(GL_RENDERBUFFER, depth_render_buffer);
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, (GLsizei) width, (GLsizei) height);
-	glFramebufferRenderbuffer(
-			GL_FRAMEBUFFER,
-			GL_DEPTH_ATTACHMENT,
-			GL_RENDERBUFFER,
-			depth_render_buffer
-	);
+                case SDL_MOUSEBUTTONUP:
+                    if(event.button.button == SDL_BUTTON_LEFT)
+                    {
+                        mouse[2] = 0.0f;
+                        mouse[3] = 0.0f;
+                    }
+                    break;
 
-	// Configure frame buffer 
-	glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, rendered_texture, 0);
+                case SDL_MOUSEMOTION:
+                    mouse[0] = event.motion.x;
+                    mouse[1] = event.motion.y;
+                    break;
 
-	GLenum draw_buffers[1] = {GL_COLOR_ATTACHMENT0};
-	glDrawBuffers(1, draw_buffers);
+                case SDL_KEYDOWN:
+                    switch(event.key.keysym.sym)
+                    {
+                        case SDLK_p:
+                            paused = !paused;
+                            break;
 
-	if(!(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE))
-	{
-		std::cout << "[" << __func__ << "] failed to create framebuffer" << std::endl;
-		return 0;
-	}
+                        // restart the simulation, buffers clear themselves on frame 0
+                        case SDLK_c:
+                            frame = 0;
+                            break;
+                    }
+                    break;
 
-	// Make a quad for the screen
-	GLuint quad_vertex_array;
-	glGenVertexArrays(1, &quad_vertex_array);
-	glBindVertexArray(quad_vertex_array);
+                case SDL_QUIT:
+                    running = false;
+                    break;
+            }
+        }
 
-	static const GLfloat quad_vertex_buffer_data[] = {
-		-1.0f, -1.0f, 0.0f,
-		1.0f,  -1.0f, 0.0f,
-		-1.0f,  1.0f, 0.0f,
-		-1.0f, -1.0f, 0.0f,
-		 1.0f, -1.0f, 0.0f,
-		 1.0f,  1.0f, 0.0f,
-	};
-	
-	GLuint quad_vertex_buffer;
-	glGenBuffers(1, &quad_vertex_buffer);
-	glBindBuffer(GL_ARRAY_BUFFER, quad_vertex_buffer);
-	glBufferData(
-			GL_ARRAY_BUFFER, 
-			sizeof(quad_vertex_buffer),
-			quad_vertex_buffer_data,
-			GL_STATIC_DRAW
-	);
+        if(!paused)
+        {
+            auto now       = std::chrono::high_resolution_clock::now();
+            float diff     = std::chrono::duration_cast<std::chrono::duration<float>>(now - prev).count();
+            float now_time = std::chrono::duration_cast<std::chrono::duration<float>>(now - start).count();
 
+            prev = now;
+            render(now_time, diff, mouse, frame, args.width, args.height);
+            SDL_GL_SwapWindow(window);
+            frame++;
 
-	Shader rtt;
+            GLenum err = glGetError();
+            if(err != GL_NO_ERROR)
+                std::cerr << "GL error 0x" << std::hex << err << std::dec << " on frame " << frame << std::endl;
+        }
+    }
 
-	rtt.load("program/rtt.vert", "program/rtt.frag");
+    SDL_GL_DeleteContext(gl_ctx);
+    destroy_window(window);
 
-	// Compile a GLSL program from the shader code
-
-
+    return 0;
 }

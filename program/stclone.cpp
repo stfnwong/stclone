@@ -1,7 +1,6 @@
 /*
  * ST ENTRY POINT
  *
- * Stefan Wong 2020
  */
 
 #include <iostream>

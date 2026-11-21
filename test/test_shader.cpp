@@ -2,7 +2,6 @@
  * TEST_SHADER 
  * Unit tests for shader object
  *
- * Stefan Wong 2020
  */
 
 #define CATCH_CONFIG_MAIN

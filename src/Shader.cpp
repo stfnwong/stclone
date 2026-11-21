@@ -2,7 +2,6 @@
  * SHADER
  * A shader object
  *
- * Stefan Wong 2020
  */
 
 

@@ -7,6 +7,7 @@
 #define __UTIL_HPP
 
 #include <string>
+#include <GL/glew.h>
 #include <SDL2/SDL.h>
 
 // start with a tiny demo
@@ -38,5 +39,6 @@ struct Args
 
 SDL_Window* create_window(const char* window_title, int width, int height);
 void destroy_window(SDL_Window* window);
+GLuint create_quad(void);
 
 #endif /*__UTIL_HPP*/

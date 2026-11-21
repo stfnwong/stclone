@@ -2,7 +2,6 @@
 MANDLEBULB
 A test mandlebuld. This is cobbled together from various places 
 
-Stefan Wong 2020
 */
 
 #version 330 core 

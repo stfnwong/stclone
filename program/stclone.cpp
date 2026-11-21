@@ -1,6 +1,7 @@
 /*
  * ST ENTRY POINT
  *
+ * Stefan Wong 2020
  */
 
 #include <iostream>
@@ -12,19 +13,9 @@
 // input args
 #include <getopt.h>
 
+#include "Pass.hpp"
 #include "Shader.hpp"
 #include "Util.hpp"
-
-/*
- * Shader uniforms 
- */
-struct ShaderUniforms
-{
-    GLuint i_time;
-    GLuint i_time_delta;
-    GLuint i_resolution;
-    GLuint i_mouse;
-};
 
 
 // Shader
@@ -33,144 +24,41 @@ ShaderUniforms uniforms;
 
 
 /*
- * Framebuffer (test)
- */
-bool frame_buffer(int width, int height)
-{
-    GLuint frame_buffer_name = 0;
-    glGenFramebuffers(1, &frame_buffer_name);
-    glBindFramebuffer(GL_FRAMEBUFFER, frame_buffer_name);
-
-    // Create a texture to hold the output 
-    GLuint rendered_texture;
-    glGenTextures(1, &rendered_texture);
-    glBindTexture(GL_TEXTURE_2D, rendered_texture); 
-
-    glTexImage2D(
-        GL_TEXTURE_2D, 
-        0, 
-        GL_RGB, 
-        (GLsizei) width, 
-        (GLsizei) height, 
-        0, 
-        GL_RGB, 
-        GL_UNSIGNED_BYTE, 
-        0
-    );
-
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-
-    // Also need a depth buffer
-
-    GLuint depth_render_buffer;
-    glGenRenderbuffers(1, &depth_render_buffer);
-    glBindRenderbuffer(GL_RENDERBUFFER, depth_render_buffer);
-    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, (GLsizei) width, (GLsizei) height);
-    glFramebufferRenderbuffer(
-            GL_FRAMEBUFFER, 
-            GL_DEPTH_ATTACHMENT, 
-            GL_RENDERBUFFER, 
-            depth_render_buffer
-    );
-
-    // Configure the frame buffer 
-    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, rendered_texture, 0);
-
-    // set the list of draw buffers 
-    GLenum draw_buffers[1] = {GL_COLOR_ATTACHMENT0};
-    glDrawBuffers(1, draw_buffers);     // first parameter is size of draw_buffers
-
-    return glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE ? true : false;
-}
-
-
-
-/*
  * render()
  */
-void render(float time_now, float time_diff, const float* mouse)
+void render(float time_now, float time_diff, const float* mouse, int frame, int width, int height)
 {
-    glUniform1f(uniforms.i_time, time_now);
-    glUniform1f(uniforms.i_time_delta, time_diff);
-    glUniform2f(uniforms.i_resolution, DISP_W, DISP_H);
-    glUniform4fv(uniforms.i_mouse, 1, mouse);
-    glDrawArrays(GL_TRIANGLES, 0, 3);
-    glDrawArrays(GL_TRIANGLES, 3, 3);
+    set_common_uniforms(uniforms, time_now, time_diff, mouse, frame, width, height);
+    glDrawArrays(GL_TRIANGLES, 0, 6);
 }
 
-// Load shader 
-int create_shader(const std::string& vert_shader_fname, const std::string& frag_shader_fname)
+/*
+ * reload_shader()
+ * On failure the previous program stays in use
+ */
+int reload_shader(const Args& args)
 {
-    int status;
-    // set up vertex buffer 
-    GLuint vao, quad;
-    glGenVertexArrays(1, &vao);
-    glBindVertexArray(vao);
+    std::cout << "Using vertex shader [" << args.vert_shader_fname << "]" << std::endl;
+    std::cout << "Using fragment shader [" << args.frag_shader_fname << "]" << std::endl;
 
-    // full screen quad
-    float quad_vertex_buffer[] = {
-        -1.0f, -1.0f,
-         1.0f, -1.0f,
-         1.0f,  1.0f,
-        -1.0f, -1.0f,
-        -1.0f,  1.0f,
-         1.0f,  1.0f,
-    };
+    int status = load_pass_shader(the_shader, uniforms, args.vert_shader_fname, args.frag_shader_fname);
+    if(status < 0)
+        return status;
 
-    glGenBuffers(1, &quad);
-    glBindBuffer(GL_ARRAY_BUFFER, quad);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(quad_vertex_buffer), quad_vertex_buffer, GL_STATIC_DRAW);
-
-    // create shader 
-    std::cout << "Using vertex shader [" << vert_shader_fname << "]" << std::endl;
-    std::cout << "Using fragment shader [" << frag_shader_fname << "]" << std::endl;
-    
-    status = the_shader.load(vert_shader_fname, frag_shader_fname);
-    if(status < 0 || !the_shader.ok())
-    {
-        std::cerr << "[" << __func__ << "] failed to load shader files [" 
-            << vert_shader_fname << "] and [" << frag_shader_fname 
-            << "]" << std::endl;
-
-        return -1;
-    }
     the_shader.use();
-
-    // connect shader inputs and outputs
-    GLint pos;
-
-    pos = the_shader.getAttrib("position");
-    glVertexAttribPointer(pos, 2, GL_FLOAT, GL_FALSE, 0, 0);
-    glEnableVertexAttribArray(pos);
-
-    pos = the_shader.getAttrib("position_out");
-    glVertexAttribPointer(pos, 2, GL_FLOAT, GL_FALSE, 0, 0);
-    glEnableVertexAttribArray(pos);
-
-
-    uniforms.i_time       = the_shader.getUniform("i_time");
-    uniforms.i_time_delta = the_shader.getUniform("i_time_delta");
-    uniforms.i_resolution = the_shader.getUniform("i_resolution");
-    uniforms.i_mouse      = the_shader.getUniform("i_mouse");
-
     return 0;
 }
 
 
-// ======== ENTRY POINT  ======== // 
+// ======== ENTRY POINT  ======== //
 int main(int argc, char* argv[])
 {
     Args args;
-    const char* const short_args = "vhi:o:W:H:";
-    const struct option long_args[] = {0};
-    int argn = 1;
+    const char* const short_args = "vhW:H:";
+    const struct option long_args[] = {{0, 0, 0, 0}};
     int status;
 
-    char* endptr;
-    long number;
-
-    // get args 
+    // get args
     while(1)
     {
         const auto opt = getopt_long(argc, argv, short_args, long_args, nullptr);
@@ -185,49 +73,52 @@ int main(int argc, char* argv[])
                 break;
 
             case 'h':
-                std::cout << "TODO : write help text and print here" << std::endl;
-                break;
+                std::cout << "Usage: " << argv[0] << " [-W width] [-H height] [shader.frag]" << std::endl;
+                exit(0);
 
             case 'W':
-                number = strtol(argv[argn+1], &endptr, 10);    // string to int...
-                args.width = (int) number;
-                argn++;
+                args.width = (int) strtol(optarg, nullptr, 10);
                 break;
 
             case 'H':
-                number = strtol(argv[argn+1], &endptr, 10);    // string to int...
-                args.height = (int) number;
-                argn++;
+                args.height = (int) strtol(optarg, nullptr, 10);
                 break;
 
             default:
-                std::cerr << "Unknown option " << std::string(optarg) << "(arg " << argn << ")" << std::endl;
                 exit(-1);
-                break;
         }
-        argn++;
     }
 
-    args.frag_shader_fname = std::string(argv[argc-1]);
+    // fragment shader is the first non-option arg, otherwise keep the default
+    if(optind < argc)
+        args.frag_shader_fname = std::string(argv[optind]);
 
-    // Set up SDL 
+    // Set up SDL
     SDL_Window* window;
     SDL_GLContext gl_ctx;
 
     window = create_window(args.frag_shader_fname.c_str(), args.width, args.height);
     gl_ctx = SDL_GL_CreateContext(window);
+    if(!gl_ctx)
+    {
+        std::cerr << "Failed to create GL context: " << SDL_GetError() << std::endl;
+        exit(-1);
+    }
     glewExperimental = GL_TRUE;
     glewInit();
 
-    status = create_shader(args.vert_shader_fname, args.frag_shader_fname);
+    create_quad();
+
+    status = reload_shader(args);
     if(status < 0)
         exit(status);
 
     bool running = true;
     bool paused = false;
+    int frame = 0;
     auto start = std::chrono::high_resolution_clock::now();
     auto prev = start;
-    float mouse[4];
+    float mouse[4] = {0.0f, 0.0f, 0.0f, 0.0f};
 
     while(running)
     {
@@ -262,9 +153,10 @@ int main(int argc, char* argv[])
                     switch(event.key.keysym.sym)
                     {
                         case SDLK_r:
-                            status = create_shader(args.vert_shader_fname, args.frag_shader_fname);
+                            if(reload_shader(args) == 0)
+                                frame = 0;
                             break;
-                            
+
                         case SDLK_p:
                             paused = !paused;
                             break;
@@ -284,8 +176,13 @@ int main(int argc, char* argv[])
             float now_time = std::chrono::duration_cast<std::chrono::duration<float>>(now - start).count();
 
             prev = now;
-            render(now_time, diff, mouse);
+            render(now_time, diff, mouse, frame, args.width, args.height);
             SDL_GL_SwapWindow(window);
+            frame++;
+
+            GLenum err = glGetError();
+            if(err != GL_NO_ERROR)
+                std::cerr << "GL error 0x" << std::hex << err << std::dec << " on frame " << frame << std::endl;
         }
     }
 

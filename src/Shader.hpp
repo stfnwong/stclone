@@ -21,6 +21,7 @@ class Shader
 
     private:
         int init(const std::string& vert_fname, const std::string& frag_fname);
+        void release(void);
 
     public:
         Shader();

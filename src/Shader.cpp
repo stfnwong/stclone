@@ -75,15 +75,48 @@ Shader::Shader()
     this->shader[1] = 0;
 }
 
-Shader::Shader(const std::string& vert_fname, const std::string& frag_fname)
+Shader::Shader(const std::string& vert_fname, const std::string& frag_fname) : Shader()
 {
     this->init(vert_fname, frag_fname);
 }
 
-int Shader::init(const std::string& vert_fname, const std::string& frag_fname)
+/*
+ * compile_shader()
+ * Returns the shader handle, or 0 on failure
+ */
+static GLuint compile_shader(GLenum type, const std::string& source, const std::string& fname)
 {
     GLint success;
     GLchar info_log[512];
+    const GLchar* code = source.c_str();
+
+    std::cout << "[" << __func__ << "] compiling shader [" << fname << "].... ";
+    GLuint s = glCreateShader(type);
+    glShaderSource(s, 1, &code, NULL);
+    glCompileShader(s);
+    glGetShaderiv(s, GL_COMPILE_STATUS, &success);
+    if(!success)
+    {
+        std::cout << " FAILED" << std::endl;
+        glGetShaderInfoLog(s, 512, NULL, info_log);
+        std::cout << "[" << __func__ << "] shader compilation log '" 
+            << info_log << "' " << std::endl;
+        glDeleteShader(s);
+        return 0;
+    }
+    std::cout << " SUCCESS" << std::endl;
+
+    return s;
+}
+
+/*
+ * Shader::init()
+ * Builds the new program in locals and only replaces the current one on success,
+ * so a failed reload leaves the previous program intact.
+ */
+int Shader::init(const std::string& vert_fname, const std::string& frag_fname)
+{
+    GLint success;
 
     std::string vshader_source = load_shader(vert_fname);
     std::string fshader_source = load_shader(frag_fname);
@@ -91,61 +124,53 @@ int Shader::init(const std::string& vert_fname, const std::string& frag_fname)
     if(vshader_source == "" || fshader_source == "")
         return -1;
 
-    // For now, lets just put all the shader code here and worry about cleaning up later
-    const GLchar* vs_code = vshader_source.c_str(); 
-    const GLchar* fs_code = fshader_source.c_str(); 
+    GLuint vs = compile_shader(GL_VERTEX_SHADER, vshader_source, vert_fname);
+    if(!vs)
+        return -1;
 
-    // vertex shader 
-    std::cout << "[" << __func__ << "] compiling shader [" << vert_fname << "].... ";
-    this->shader[0] = glCreateShader(GL_VERTEX_SHADER);   
-    glShaderSource(this->shader[0], 1, &vs_code, NULL);
-    glCompileShader(this->shader[0]);
-    glGetShaderiv(this->shader[0], GL_COMPILE_STATUS, &success);
-    if(!success)
+    GLuint fs = compile_shader(GL_FRAGMENT_SHADER, fshader_source, frag_fname);
+    if(!fs)
     {
-        std::cout << " FAILED" << std::endl;
-        glGetShaderInfoLog(this->shader[0], 512, NULL, info_log);
-        std::cout << "[" << __func__ << "] shader compilation log '" 
-            << info_log << "' " << std::endl;
+        glDeleteShader(vs);
         return -1;
     }
-    std::cout << " SUCCESS" << std::endl;
-
-    // fragment shader
-    std::cout << "[" << __func__ << "] compiling shader [" << frag_fname << "].... ";
-    this->shader[1] = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(this->shader[1], 1, &fs_code, NULL);
-    glCompileShader(this->shader[1]);
-    glGetShaderiv(this->shader[1], GL_COMPILE_STATUS, &success);
-    if(!success)
-    {
-        std::cout << " FAILED" << std::endl;
-        glGetShaderInfoLog(this->shader[1], 512, NULL, info_log);
-        std::cout << "[" << __func__ << "] shader compilation log '" 
-            << info_log << "' " << std::endl;
-        return -1;
-    }
-    std::cout << " SUCCESS" << std::endl;
 
     // Create the program
-    this->program = glCreateProgram();
-    for(int i = 0; i < 2; ++i)
-        glAttachShader(this->program, this->shader[i]);
+    GLuint prog = glCreateProgram();
+    glAttachShader(prog, vs);
+    glAttachShader(prog, fs);
 
     // For now we just fix the attributes here. Not sure it its worth trying to make this more dynamic?
-    glBindAttribLocation(this->program, 0, "position");
-    glBindAttribLocation(this->program, 1, "tex_coord");
+    glBindAttribLocation(prog, 0, "position");
+    glBindAttribLocation(prog, 1, "tex_coord");
 
-    glLinkProgram(this->program);
-    check_shader_error(this->program, GL_LINK_STATUS, true, "ERROR: Failed to link program");
+    glLinkProgram(prog);
+    check_shader_error(prog, GL_LINK_STATUS, true, "ERROR: Failed to link program");
+    glGetProgramiv(prog, GL_LINK_STATUS, &success);
+    if(!success)
+    {
+        glDeleteProgram(prog);
+        glDeleteShader(vs);
+        glDeleteShader(fs);
+        return -1;
+    }
 
-    glValidateProgram(this->program);
-    check_shader_error(this->program, GL_VALIDATE_STATUS, true, "ERROR: Failed to validate program");
+    glValidateProgram(prog);
+    check_shader_error(prog, GL_VALIDATE_STATUS, true, "ERROR: Failed to validate program");
+
+    // swap in the new program
+    this->release();
+    this->program = prog;
+    this->shader[0] = vs;
+    this->shader[1] = fs;
 
     return 0;
 }
 
-Shader::~Shader() 
+/*
+ * Shader::release()
+ */
+void Shader::release(void)
 {
     if(this->program > 0)
     {
@@ -156,6 +181,15 @@ Shader::~Shader()
         }
         glDeleteProgram(this->program);
     }
+
+    this->program = 0;
+    this->shader[0] = 0;
+    this->shader[1] = 0;
+}
+
+Shader::~Shader() 
+{
+    this->release();
 }
 
 // operators 

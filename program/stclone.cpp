@@ -18,9 +18,9 @@
 #include "Util.hpp"
 
 
-// Shader
-Shader the_shader;
-ShaderUniforms uniforms;
+// Passes, drawn in the order Buffer A, Image
+Pass buf_a;
+Pass image;
 
 
 /*
@@ -28,24 +28,42 @@ ShaderUniforms uniforms;
  */
 void render(float time_now, float time_diff, const float* mouse, int frame, int width, int height)
 {
-    set_common_uniforms(uniforms, time_now, time_diff, mouse, frame, width, height);
-    glDrawArrays(GL_TRIANGLES, 0, 6);
+    if(buf_a.offscreen)
+        draw_pass(buf_a, time_now, time_diff, mouse, frame, width, height);
+    draw_pass(image, time_now, time_diff, mouse, frame, width, height);
 }
 
 /*
- * reload_shader()
- * On failure the previous program stays in use
+ * reload_shaders()
+ * A pass whose shader fails to load keeps its previous program. Buffers are only
+ * cleared if every pass loaded.
  */
-int reload_shader(const Args& args)
+int reload_shaders(const Args& args)
 {
-    std::cout << "Using vertex shader [" << args.vert_shader_fname << "]" << std::endl;
-    std::cout << "Using fragment shader [" << args.frag_shader_fname << "]" << std::endl;
+    int status = 0;
 
-    int status = load_pass_shader(the_shader, uniforms, args.vert_shader_fname, args.frag_shader_fname);
+    std::cout << "Using vertex shader [" << args.vert_shader_fname << "]" << std::endl;
+
+    if(buf_a.offscreen)
+    {
+        std::cout << "Using Buffer A shader [" << args.buf_a_fname << "]" << std::endl;
+        if(load_pass(buf_a, args.vert_shader_fname, args.buf_a_fname) < 0)
+            status = -1;
+    }
+
+    std::cout << "Using fragment shader [" << args.frag_shader_fname << "]" << std::endl;
+    if(load_pass(image, args.vert_shader_fname, args.frag_shader_fname) < 0)
+        status = -1;
+
     if(status < 0)
         return status;
 
-    the_shader.use();
+    if(buf_a.offscreen && !create_pass_targets(buf_a, args.width, args.height))
+    {
+        std::cerr << "Failed to create framebuffers for Buffer A" << std::endl;
+        return -1;
+    }
+
     return 0;
 }
 
@@ -54,7 +72,7 @@ int reload_shader(const Args& args)
 int main(int argc, char* argv[])
 {
     Args args;
-    const char* const short_args = "vhW:H:";
+    const char* const short_args = "vhW:H:a:";
     const struct option long_args[] = {{0, 0, 0, 0}};
     int status;
 
@@ -73,7 +91,7 @@ int main(int argc, char* argv[])
                 break;
 
             case 'h':
-                std::cout << "Usage: " << argv[0] << " [-W width] [-H height] [shader.frag]" << std::endl;
+                std::cout << "Usage: " << argv[0] << " [-W width] [-H height] [-a buf_a.frag] [shader.frag]" << std::endl;
                 exit(0);
 
             case 'W':
@@ -82,6 +100,10 @@ int main(int argc, char* argv[])
 
             case 'H':
                 args.height = (int) strtol(optarg, nullptr, 10);
+                break;
+
+            case 'a':
+                args.buf_a_fname = std::string(optarg);
                 break;
 
             default:
@@ -109,7 +131,15 @@ int main(int argc, char* argv[])
 
     create_quad();
 
-    status = reload_shader(args);
+    // Buffer A reads its own previous frame, Image reads Buffer A
+    if(!args.buf_a_fname.empty())
+    {
+        buf_a.offscreen = true;
+        buf_a.channel0  = &buf_a;
+        image.channel0  = &buf_a;
+    }
+
+    status = reload_shaders(args);
     if(status < 0)
         exit(status);
 
@@ -153,7 +183,7 @@ int main(int argc, char* argv[])
                     switch(event.key.keysym.sym)
                     {
                         case SDLK_r:
-                            if(reload_shader(args) == 0)
+                            if(reload_shaders(args) == 0)
                                 frame = 0;
                             break;
 

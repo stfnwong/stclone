@@ -22,6 +22,7 @@ struct Args
 {
     std::string vert_shader_fname;
     std::string frag_shader_fname;
+    std::string buf_a_fname;        // empty means no Buffer A
     int width;
     int height;
     bool verbose;
@@ -29,6 +30,7 @@ struct Args
     Args() : 
         vert_shader_fname("shader/default.vert"), 
         frag_shader_fname("shader/default.frag"),
+        buf_a_fname(""),
         width(DISP_W),
         height(DISP_H),
         verbose(false) 
